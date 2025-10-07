@@ -3,6 +3,9 @@
 # unignore dirs
 !src/
 !tests/
+!.github/
+!.specify/
+!.vscode/
 
 # unignore files
 !.gitignore
