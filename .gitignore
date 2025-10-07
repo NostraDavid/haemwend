@@ -1,0 +1,16 @@
+/*
+
+# unignore dirs
+!src/
+!tests/
+
+# unignore files
+!.gitignore
+!.python-version
+!pyproject.toml
+!uv.lock
+!README.md
+
+# re-ignore
+__pycache__
+*.egg-info

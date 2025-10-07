@@ -1,0 +1,318 @@
+# https://docs.astral.sh/uv/concepts/projects/layout/
+[build-system]
+requires = ["uv_build>=0.8.7,<0.9.0"]
+build-backend = "uv_build"
+
+[project]
+name = "haemwend"
+version = "0.0.0"
+description = "A Fantasy MMO Experience"
+readme = "README.md"
+authors = [
+    { name = "NostraDavid", email = "55331731+NostraDavid@users.noreply.github.com" },
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+haemwend = "haemwend:main"
+
+[dependency-groups]
+dev = [
+    "austin>=2016.0.1", # profiling
+    "bump-my-version>=1.2.4", # for version management of the lib
+    "coverage[toml]>=7.10.7", # coverage
+    "hypothesis>=6.140.3", # generative testing
+    "mutmut>=3.3.1", # mutation testing
+    "pre-commit>=4.3.0", # to run checks before committing
+    "pytest-cov>=7.0.0", # coverage for pytest
+    "pytest-dotenv>=0.5.2", # for loading environment variables from .env files in tests
+    "pytest-integration>=0.2.3", # for @mark additions
+    "pytest-mock>=3.14.1", # for mocking in tests
+    "pytest-structlog>=1.2",
+    "pytest>=8.4.2", # testing framework
+    "ruff>=0.13.3", # linter and formatter
+    "scalene>=1.5.55", # profiling
+    "tox-uv>=1.28.0", # to ensure tox can use uv
+    "tox>=4.30.3", # to run tests in different environments
+    "ty>=0.0.1a21", # type checking
+    "uv>=0.8.8", # normally I would let my OS handle this, but NixOS has version 0.7.x, and I want to use 0.8.x
+    "vulture>=2.14", # to find unused code (with a certain confidence)
+]
+
+# ======================
+# == PROGRAM SETTINGS ==
+# ======================
+
+# https://docs.astral.sh/ruff/configuration/
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+fix = true
+output-format = "concise"
+unsafe-fixes = true
+
+# Exclude common directories from both linting and formatting
+exclude = ["docs", "notebooks", "algovibes", "alembic"]
+
+[tool.ruff.lint]
+# Tests are only excluded from linting, not formatting
+exclude = ["tests/**"]
+# Enable these rule categories
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "I",   # isort
+    "N",   # pep8-naming
+    "C4",  # flake8-comprehensions
+    "ICN", # flake8-import-conventions
+    "PIE", # flake8-pie
+    "T20", # flake8-print
+    "PYI", # flake8-pyi
+    "PT",  # flake8-pytest-style
+    "Q",   # flake8-quotes
+    "RSE", # flake8-raise
+    "RET", # flake8-return
+    "S",   # flake8-bandit (security)
+    "TID", # flake8-tidy-imports
+    "TC",  # flake8-type-checking
+    "ARG", # flake8-unused-arguments
+    "PTH", # flake8-use-pathlib
+    "ERA", # eradicate (commented-out code)
+    "PGH", # pygrep-hooks
+    # "PL",  # pylint
+    "TRY", # tryceratops
+    "FLY", # flynt
+    "RUF", # Ruff-specific rules
+]
+
+# # Ignore specific rules that might be too strict for this project
+ignore = [
+    "S101",   # I want to be able to run asserts in source as well.
+    "TRY300", # Consider moving this statement to an `else` block
+    "ARG002", # Unused method argument
+    "RET504", # Unnecessary assignment to `target` before `return` statement
+    "PL",     # All my homies hate Pylint
+    #     "E501",    # Line too long (handled by line-length setting)
+    #     "S101",    # Use of assert (common in tests)
+    #     "PLR0913", # Too many arguments to function call
+    #     "PLR0915", # Too many statements
+    #     "PLR2004", # Magic value used in comparison
+    #     "TRY003",  # Avoid specifying long messages outside exception class
+    #     "B008",    # Do not perform function calls in argument defaults
+    #     "N806",    # Variable in function should be lowercase (for compatibility)
+    #     "SIM108",  # Use ternary operator (sometimes less readable)
+    #     "T201",    # print found (allow for debugging/examples)
+    #     "ERA001",  # Found commented-out code (sometimes intentional)
+]
+
+# # Allow fix for all enabled rules (when running `ruff check --fix`)
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.per-file-ignores]
+# Tests can use more relaxed rules
+"tests/**/*.py" = [
+    "PLR2004", # Magic value used in comparison
+    "ARG001",  # Unused function argument (fixtures)
+    "ARG002",  # Unused method argument
+    "SLF001",  # Private member accessed
+    "PT011",   # pytest-raises-too-broad
+    "PT012",   # pytest-raises-multiple-statements
+    "S603",    # subprocess-without-shell-equals-true
+    "S607",    # start-process-with-partial-path
+]
+
+# Example files and scripts can be more relaxed
+"examples/**/*.py" = [
+    "T201", # print found
+    "S101", # Use of assert
+]
+
+# __init__.py files can have unused imports
+"**/__init__.py" = [
+    "F401", # Unused import
+    "F403", # Star import
+]
+
+[tool.ruff.lint.isort]
+# Sort imports
+force-single-line = false
+combine-as-imports = true
+split-on-trailing-comma = true
+known-first-party = ["kafkaesk"]
+known-third-party = ["pytest", "sqlite3"]
+
+[tool.ruff.lint.mccabe]
+# Flag errors for functions with complexity higher than 10
+max-complexity = 10
+
+[tool.ruff.lint.flake8-quotes]
+# Use double quotes for strings
+docstring-quotes = "double"
+inline-quotes = "double"
+
+[tool.ruff.lint.flake8-pytest-style]
+# pytest style configuration
+fixture-parentheses = false
+mark-parentheses = false
+
+[tool.ruff.format]
+# Use double quotes for strings
+quote-style = "double"
+# Use spaces around operators and after commas
+indent-style = "space"
+# Respect magic trailing commas
+skip-magic-trailing-comma = false
+# Automatically detect line endings
+line-ending = "auto"
+
+# https://docs.astral.sh/ty/configuration/
+[tool.ty.environment]
+python = "./.venv"
+python-version = "3.13"
+root = ["./src"]
+
+[tool.ty.src]
+include = ["src", "tests"]
+
+[tool.ty.terminal]
+output-format = "concise"
+
+# https://tox.wiki/en/4.28.0/config.html
+[tool.tox]
+requires = ["tox>=4.19"]
+env_list = ["py", "ruff-format", "ruff-check", "ty", "report"]
+isolated_build = true
+
+[tool.tox.env_run_base]
+description = "Run test under {base_python}"
+allowlist_externals = ["*"]
+skip_install = true
+commands = [["coverage", "run", "--module", "pytest"]]
+
+[tool.tox.env.report]
+description = "Generate coverage reports"
+depends = ["ruff-format", "ruff-check", "ty"]
+commands = [
+    [
+        "coverage",
+        "combine",
+    ],
+    [
+        "coverage",
+        "html",
+        "--fail-under=0",
+    ],
+    [
+        "coverage",
+        "xml",
+        "--fail-under=0",
+    ],
+    [
+        "coverage",
+        "report",
+    ],
+]
+
+[tool.tox.env.ruff-format]
+description = "Validate Ruff formatting has been applied"
+skip_install = true
+commands = [["ruff", "format", "--check", "--diff", "."]]
+
+[tool.tox.env.ruff-check]
+description = "Run Ruff lint checks"
+skip_install = true
+commands = [["ruff", "check", "."]]
+
+[tool.tox.env.ty]
+description = "Run Ty type checking"
+skip_install = true
+commands = [["ty", "check"]]
+
+# https://coverage.readthedocs.io/en/7.10.2/
+# https://pytest-cov.readthedocs.io/en/v2.6.0/
+[tool.coverage.run]
+branch = true
+parallel = true
+# concurrency = ["gevent"]
+# core = "sysmon"  # Disabled: Python 3.13 sys.monitoring doesn't support branch coverage yet
+cover_pylib = false
+data_file = ".coverage"
+disable_warnings = ["no-sysmon"] # Suppress sys.monitoring fallback warning
+# https://coverage.readthedocs.io/en/7.10.1/cmd.html#cmd-run-debug
+debug = []
+# source: A list of packages or directorie
+omit = [
+    "alembic/*",
+    "algovibes/*",
+    "docs/*",
+    "example_data/*",
+    "logs/*",
+    "notebooks/*",
+    "scripts/*",
+    "tests/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == '__main__':",
+    "raise NotImplementedError",
+    "pass",
+    "continue",
+]
+omit = [
+    "alembic/*",
+    "algovibes/*",
+    "docs/*",
+    "example_data/*",
+    "logs/*",
+    "notebooks/*",
+    "scripts/*",
+    "tests/*",
+]
+fail_under = 41
+ignore_errors = true
+precision = 0
+show_missing = true
+skip_covered = false
+skip_empty = false
+sort = "Cover"
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# https://docs.pytest.org/en/8.3.x/
+[tool.pytest.ini_options]
+minversion = "8.0" # Set the minimum pytest version
+# `pytest --help` to show all possible `addopts` options
+addopts = [
+    "--strict-config",
+    "--strict-markers",
+    # "--stepwise",
+    "--durations=4",
+    "--verbosity=4",
+    "--no-header",
+    "--show-capture=all",
+    "-ra",
+    "--tb=line",
+]
+testpaths = ["tests/"]
+markers = [
+    "no_cover: some pytest-integration default mark that's not known?.",
+    "slow: marks tests as slow (deselect with -m 'not slow')",
+    "property: property-based tests exercising ingestion invariants",
+    "integration: integration tests requiring external services (Redpanda, DuckDB)",
+]
+python_classes = "Test*"
+python_files = "test_*.py"
+python_functions = "test_*"
+structlog_settings_report = "never"
