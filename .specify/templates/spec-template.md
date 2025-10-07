@@ -5,13 +5,13 @@
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
   Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
   you should still have a viable MVP (Minimum Viable Product) that delivers value.
-  
+
   Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
   Think of each story as a standalone slice of functionality that can be:
   - Developed independently
@@ -19,6 +19,8 @@
   - Deployed independently
   - Demonstrated to users independently
 -->
+
+**Constitution Alignment:** For every story, explain how it preserves host autonomy (feature flags + community vote workflow), safeguards class identity while allowing flexibility, keeps knowledge discoverable in-game, and respects fairness, safety, and monetization guardrails.
 
 ### User Story 1 - [Brief Title] (Priority: P1)
 
@@ -72,10 +74,12 @@
   Fill them out with the right edge cases.
 -->
 
-- What happens when [boundary condition]?
-- How does system handle [error scenario]?
+- What happens when a host community vetoes or delays the feature flag vote?
+- How does the system respond if a class loses access to its signature mechanic during the flow?
+- How do players recover if knowledge about this feature leaks outside the game (e.g., spoilers, data mining)?
+- What telemetry or guardrails trigger a rollback when economy fairness or safety limits are breached?
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 <!--
   ACTION REQUIRED: The content in this section represents placeholders.
@@ -84,23 +88,23 @@
 
 ### Functional Requirements
 
-- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]  
-- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
-- **FR-005**: System MUST [behavior, e.g., "log all security events"]
+- **FR-001**: Feature MUST be guard-railed behind a host-specific feature flag with an associated community vote workflow.
+- **FR-002**: System MUST preserve each class’s signature mechanic/UX while enabling multi-class access to the feature.
+- **FR-003**: Players MUST discover and complete the feature entirely in-game without relying on external knowledge sources.
+- **FR-004**: Telemetry MUST capture engagement, fairness, and economy impact for host-level dashboards.
+- **FR-005**: Monetization and rewards MUST comply with the constitution’s fairness bans (no power selling, clear odds, refund eligibility).
 
-*Example of marking unclear requirements:*
+_Example of marking unclear requirements:_
 
-- **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
-- **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
+- **FR-006**: Feature MUST surface lore context via [NEEDS CLARIFICATION: in-game journals, NPC dialogue, or environmental storytelling?]
+- **FR-007**: System MUST throttle host votes within [NEEDS CLARIFICATION: maximum concurrent ballots] to respect player impact limits.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **[Entity 1]**: [What it represents, key attributes without implementation]
 - **[Entity 2]**: [What it represents, relationships to other entities]
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 <!--
   ACTION REQUIRED: Define measurable success criteria.
@@ -109,7 +113,7 @@
 
 ### Measurable Outcomes
 
-- **SC-001**: [Measurable metric, e.g., "Users can complete account creation in under 2 minutes"]
-- **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
-- **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
-- **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
+- **SC-001**: At least [X]% of targeted hosts enable the feature post-vote within [Y] days without triggering a fairness/safety rollback.
+- **SC-002**: Players complete the feature’s primary loop within [time] while preserving class identity metrics (no more than [Δ%] variance in signature mechanic usage).
+- **SC-003**: In-game discovery surveys show ≥[X]% of players learned about the feature through in-world channels (journals, NPCs, or other players).
+- **SC-004**: Economy telemetry stays within guardrail bands (e.g., price inflation <[threshold]%, refund rate <[threshold]% with root-cause notes).
