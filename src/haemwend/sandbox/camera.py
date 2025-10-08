@@ -25,6 +25,8 @@ class CameraSettings:
     sprint_multiplier: float = 1.8
     mouse_sensitivity: float = 0.15
     vertical_look_limit: float = 82.0
+    ground_height: float = 1.6
+    boundary_radius: float = 30.0
 
 
 class SandboxCameraController:
@@ -36,8 +38,6 @@ class SandboxCameraController:
         self,
         *,
         settings: CameraSettings | None = None,
-        boundary_radius: float = 30.0,
-        ground_height: float = 1.6,
     ) -> None:
         self.settings = settings or CameraSettings()
         self._base: ShowBase | None = None
@@ -54,8 +54,8 @@ class SandboxCameraController:
         self._window_center: tuple[int, int] | None = None
         self._yaw = 0.0
         self._pitch = 0.0
-        self._boundary_radius = max(boundary_radius, 0.0)
-        self._ground_height = max(ground_height, 0.0)
+        self._boundary_radius = max(self.settings.boundary_radius, 0.0)
+        self._ground_height = max(self.settings.ground_height, 0.0)
         self._magnet_strength = 0.96
         self._outside_boundary = False
         self._boundary_ratio = 0.0
@@ -114,6 +114,13 @@ class SandboxCameraController:
             self._boundary_radius = max(radius, 0.0)
         if ground_height is not None:
             self._ground_height = max(ground_height, 0.0)
+
+    def apply_settings(self, settings: CameraSettings) -> None:
+        """Replace the active settings and update derived constraints."""
+
+        self.settings = settings
+        self._boundary_radius = max(settings.boundary_radius, 0.0)
+        self._ground_height = max(settings.ground_height, 0.0)
 
     # Internal helpers -------------------------------------------------
 

@@ -18,21 +18,15 @@ class SandboxUI:
     """Render and control the instructional overlay shown within the sandbox."""
 
     _TITLE = "Haemwend Sandbox"
-    _BODY_LINES = (
-        "W / A / S / D — walk",
-        "Mouse — look",
-        "Shift — sprint",
-        "Space / Ctrl — rise & descend",
-        "H — toggle help",
-        "Esc — quit window",
-    )
 
-    def __init__(self) -> None:
+    def __init__(self, *, help_lines: list[str] | tuple[str, ...] | None = None) -> None:
         self.visible = True
         self._base: ShowBase | None = None
         self._panel: DirectFrame | None = None
-        self._labels: list[OnscreenText] = []
+        self._title_label: OnscreenText | None = None
+        self._instruction_labels: list[OnscreenText] = []
         self._boundary_label: Any | None = None
+        self._body_lines: list[str] = list(help_lines) if help_lines is not None else list(self._default_lines())
 
     # Lifecycle ------------------------------------------------------
 
@@ -54,14 +48,17 @@ class SandboxUI:
 
         if self._panel is not None:
             self._panel.destroy()
-        for label in self._labels:
+        if self._title_label is not None:
+            self._title_label.removeNode()
+        for label in self._instruction_labels:
             label.removeNode()
         boundary = self._boundary_label
         if boundary is not None:
             boundary.removeNode()
 
         self._panel = None
-        self._labels.clear()
+        self._title_label = None
+        self._instruction_labels.clear()
         self._boundary_label = None
         self._base = None
 
@@ -80,7 +77,9 @@ class SandboxUI:
 
         if self._panel is not None:
             self._panel.show()
-        for label in self._labels:
+        if self._title_label is not None:
+            self._title_label.show()
+        for label in self._instruction_labels:
             label.show()
         boundary = self._boundary_label
         if boundary is not None:
@@ -92,7 +91,9 @@ class SandboxUI:
 
         if self._panel is not None:
             self._panel.hide()
-        for label in self._labels:
+        if self._title_label is not None:
+            self._title_label.hide()
+        for label in self._instruction_labels:
             label.hide()
         boundary = self._boundary_label
         if boundary is not None:
@@ -116,6 +117,8 @@ class SandboxUI:
             pos=(1.1, 0, 0.72),
         )
 
+        self._instruction_labels.clear()
+
         title = OnscreenText(
             text=self._TITLE,
             parent=self._panel,
@@ -125,11 +128,11 @@ class SandboxUI:
             scale=0.06,
             mayChange=False,
         )
-        self._labels.append(title)
+        self._title_label = title
 
         line_height = 0.1
         start_y = 0.05
-        for index, body_text in enumerate(self._BODY_LINES):
+        for index, body_text in enumerate(self._body_lines):
             label = OnscreenText(
                 text=body_text,
                 parent=self._panel,
@@ -137,9 +140,9 @@ class SandboxUI:
                 fg=(0.85, 0.9, 1.0, 1.0),
                 align=TextNode.ALeft,
                 scale=0.045,
-                mayChange=False,
+                mayChange=True,
             )
-            self._labels.append(label)
+            self._instruction_labels.append(label)
 
         boundary = OnscreenText(
             text="",
@@ -176,3 +179,37 @@ class SandboxUI:
         else:
             boundary.hide()
 
+    # Content --------------------------------------------------------
+
+    def set_control_instructions(self, lines: list[str] | tuple[str, ...]) -> None:
+        """Update the instruction text displayed in the overlay."""
+
+        new_lines = [line.strip() for line in lines if line.strip()]
+        if not new_lines:
+            new_lines = list(self._default_lines())
+        self._body_lines = new_lines
+
+        base = self._base
+        if base is None:
+            return
+
+        was_visible = self.visible
+        # Rebuild overlay to ensure label count matches new lines.
+        self.unbind()
+        self._base = base
+        self._create_overlay()
+        if was_visible:
+            self.show()
+        else:
+            self.hide()
+
+    @staticmethod
+    def _default_lines() -> tuple[str, ...]:
+        return (
+            "W / A / S / D — walk",
+            "Mouse — look",
+            "Shift — sprint",
+            "Space / Ctrl — rise & descend",
+            "H — toggle help",
+            "Esc — quit window",
+        )

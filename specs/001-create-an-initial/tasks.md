@@ -70,10 +70,10 @@
 
 **Independent Test**: Edit `config/sandbox.toml`, restart the sandbox, and confirm camera sensitivity, movement speeds, and shape layout reflect the new configuration while logging overrides.
 
-- [ ] T014 [US3] Expand `src/haemwend/infrastructure/config_loader.py` to map camera sensitivity, movement speeds, shape catalog, and enable toggle overrides with validation against bounds.
-- [ ] T015 [P] [US3] Update `src/haemwend/sandbox/environment.py` to instantiate primitives from config definitions and clamp positions inside the circular boundary.
-- [ ] T016 [US3] Apply configurable camera parameters and update help text in `src/haemwend/sandbox/camera.py` and `ui.py`, ensuring runtime refresh on launch.
-- [ ] T017 [US3] Emit structured override summaries and sandbox start/stop metadata from `src/haemwend/sandbox/runtime.py` using the logging helper.
+- [X] T014 [US3] Expand `src/haemwend/infrastructure/config_loader.py` to map camera sensitivity, movement speeds, shape catalog, and enable toggle overrides with validation against bounds.
+- [X] T015 [P] [US3] Update `src/haemwend/sandbox/environment.py` to instantiate primitives from config definitions and clamp positions inside the circular boundary.
+- [X] T016 [US3] Apply configurable camera parameters and update help text in `src/haemwend/sandbox/camera.py` and `ui.py`, ensuring runtime refresh on launch.
+- [X] T017 [US3] Emit structured override summaries and sandbox start/stop metadata from `src/haemwend/sandbox/runtime.py` using the logging helper.
 
 **Checkpoint**: All three user stories are independently demoable, with configuration-driven tuning and telemetry in place.
 

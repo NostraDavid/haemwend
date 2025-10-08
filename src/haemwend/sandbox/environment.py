@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from math import sqrt
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -18,10 +19,15 @@ from panda3d.core import (  # type: ignore[import-not-found]
     Vec4,
 )
 
-from haemwend.infrastructure.config_loader import EnvironmentConfig, PrimitiveConfig, SandboxConfig
+from haemwend.infrastructure.config_loader import (
+    DEFAULT_PRIMITIVES,
+    EnvironmentConfig,
+    PrimitiveConfig,
+    SandboxConfig,
+)
 from haemwend.infrastructure.logging import get_logger
 
-__all__ = ["build_environment"]
+__all__ = ["build_environment", "clamp_within_boundary"]
 
 
 def build_environment(base: ShowBase, *, config: SandboxConfig) -> list[NodePath]:
@@ -78,19 +84,31 @@ def _build_primitives(
     primitives = list(environment.primitives) if environment.primitives else _default_primitives()
 
     for primitive in primitives:
-        node = _instantiate_primitive(base, primitive, logger)
+        node = _instantiate_primitive(
+            base,
+            primitive,
+            logger,
+            boundary_radius=environment.boundary_radius,
+        )
         nodes.append(node)
 
     return nodes
 
 
-def _instantiate_primitive(base: ShowBase, primitive: PrimitiveConfig, logger) -> NodePath:
+def _instantiate_primitive(
+    base: ShowBase,
+    primitive: PrimitiveConfig,
+    logger,
+    *,
+    boundary_radius: float,
+) -> NodePath:
     maker = CardMaker(primitive.name)
     maker.setFrame(-0.5, 0.5, -0.5, 0.5)
     node = NodePath(maker.generate())
     node.setTwoSided(True)
 
-    node.setPos(LPoint3f(*primitive.position))
+    clamped_position = clamp_within_boundary(primitive.position, boundary_radius=boundary_radius)
+    node.setPos(LPoint3f(*clamped_position))
     node.setScale(LVector3f(*primitive.scale))
     node.setColor(Vec4(*primitive.color))
 
@@ -107,32 +125,30 @@ def _instantiate_primitive(base: ShowBase, primitive: PrimitiveConfig, logger) -
         "sandbox.environment.primitive",
         name=primitive.name,
         type=primitive.type,
-        position=list(primitive.position),
+        position=list(clamped_position),
+        original_position=list(primitive.position),
+        clamped=clamped_position != primitive.position,
     )
     return node
 
 
 def _default_primitives() -> list[PrimitiveConfig]:
-    return [
-        PrimitiveConfig(
-            name="obelisk",
-            type="cube",
-            position=(0.0, 10.0, 1.5),
-            scale=(1.5, 1.5, 3.0),
-            color=(0.6, 0.55, 0.8, 1.0),
-        ),
-        PrimitiveConfig(
-            name="spire",
-            type="cylinder",
-            position=(-8.0, -6.0, 2.0),
-            scale=(1.2, 1.2, 4.0),
-            color=(0.3, 0.7, 0.5, 1.0),
-        ),
-        PrimitiveConfig(
-            name="orb",
-            type="sphere",
-            position=(6.0, 4.0, 2.5),
-            scale=(1.5, 1.5, 1.5),
-            color=(0.9, 0.6, 0.2, 1.0),
-        ),
-    ]
+    return list(DEFAULT_PRIMITIVES)
+
+
+def clamp_within_boundary(
+    position: tuple[float, float, float],
+    *,
+    boundary_radius: float,
+) -> tuple[float, float, float]:
+    if boundary_radius <= 0:
+        return position
+
+    x, y, z = position
+    planar_distance = sqrt(x * x + y * y)
+    if planar_distance <= boundary_radius:
+        return position
+
+    scale = boundary_radius / planar_distance
+    clamped = (x * scale, y * scale, z)
+    return clamped
