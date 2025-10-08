@@ -12,7 +12,10 @@ authors = [
     { name = "NostraDavid", email = "55331731+NostraDavid@users.noreply.github.com" },
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "panda3d>=1.10.14",
+    "structlog>=24.4.0",
+]
 
 [project.scripts]
 haemwend = "haemwend:main"

@@ -7,6 +7,7 @@
 !.specify/
 !.vscode/
 !docs/
+!specs/
 
 # unignore files
 !.gitignore
