@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import sqrt
 from typing import TYPE_CHECKING, Any
 
 from direct.showbase.ShowBaseGlobal import globalClock  # type: ignore[import-not-found]
@@ -31,7 +32,13 @@ class SandboxCameraController:
 
     _TASK_NAME = "sandbox-camera-update"
 
-    def __init__(self, settings: CameraSettings | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        settings: CameraSettings | None = None,
+        boundary_radius: float = 30.0,
+        ground_height: float = 1.6,
+    ) -> None:
         self.settings = settings or CameraSettings()
         self._base: ShowBase | None = None
         self._key_state: dict[str, bool] = {
@@ -47,6 +54,11 @@ class SandboxCameraController:
         self._window_center: tuple[int, int] | None = None
         self._yaw = 0.0
         self._pitch = 0.0
+        self._boundary_radius = max(boundary_radius, 0.0)
+        self._ground_height = max(ground_height, 0.0)
+        self._magnet_strength = 0.96
+        self._outside_boundary = False
+        self._boundary_ratio = 0.0
 
     def bind(self, base: ShowBase) -> None:
         """Attach the camera controller to Panda3D input callbacks."""
@@ -92,6 +104,16 @@ class SandboxCameraController:
         base = self._base
         self._update_mouse_look(base)
         self._update_movement(base, dt)
+
+    # Constraint configuration --------------------------------------
+
+    def configure_boundary(self, *, radius: float | None = None, ground_height: float | None = None) -> None:
+        """Update soft boundary and ground constraints for the camera."""
+
+        if radius is not None:
+            self._boundary_radius = max(radius, 0.0)
+        if ground_height is not None:
+            self._ground_height = max(ground_height, 0.0)
 
     # Internal helpers -------------------------------------------------
 
@@ -169,6 +191,7 @@ class SandboxCameraController:
             direction -= camera_quat.getUp()
 
         if direction.lengthSquared() == 0:
+            self._apply_constraints(base)
             return
 
         direction.normalize()
@@ -176,9 +199,55 @@ class SandboxCameraController:
         if self._key_state["sprint"]:
             speed *= self.settings.sprint_multiplier
 
-        base.camera.setPos(base.camera.getPos() + direction * speed * dt)
+        proposed = base.camera.getPos() + direction * speed * dt
+        constrained = self._constrain_position(proposed)
+        base.camera.setPos(constrained)
 
     def _update_task(self, task: Task) -> int:
         dt = float(globalClock.getDt())
         self.update(dt)
         return task.cont
+
+    def _apply_constraints(self, base: ShowBase) -> None:
+        constrained = self._constrain_position(base.camera.getPos())
+        base.camera.setPos(constrained)
+
+    def _constrain_position(self, position: Vec3) -> Vec3:
+        x = float(position.x)
+        y = float(position.y)
+        z = max(float(position.z), self._ground_height)
+
+        radius = self._boundary_radius
+        planar_distance = sqrt(x * x + y * y)
+        if radius > 0:
+            ratio = planar_distance / radius
+            self._boundary_ratio = ratio
+            self._outside_boundary = ratio > 1.0
+        else:
+            self._boundary_ratio = 0.0
+            self._outside_boundary = False
+
+        if radius > 0 and planar_distance > radius:
+            scale = (radius * self._magnet_strength) / planar_distance
+            x *= scale
+            y *= scale
+
+        return Vec3(x, y, z)
+
+    # Diagnostics -----------------------------------------------------
+
+    @property
+    def boundary_radius(self) -> float:
+        return self._boundary_radius
+
+    @property
+    def ground_height(self) -> float:
+        return self._ground_height
+
+    @property
+    def is_outside_boundary(self) -> bool:
+        return self._outside_boundary
+
+    @property
+    def boundary_ratio(self) -> float:
+        return self._boundary_ratio

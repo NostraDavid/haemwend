@@ -56,9 +56,9 @@
 
 **Independent Test**: Launch the sandbox, toggle instructions with the `H` key, and confirm the camera remains above the ground plane and inside the 30 m radius boundary during movement.
 
-- [ ] T011 [P] [US2] Implement control overlay UI in `src/haemwend/sandbox/ui.py` that displays movement/look/sprint/help hints and toggles via the `H` key.
-- [ ] T012 [US2] Extend `src/haemwend/sandbox/camera.py` to enforce the 30 m radius boundary with gentle redirection and maintain ground-height constraints.
-- [ ] T013 [US2] Integrate the overlay and boundary feedback within `src/haemwend/sandbox/runtime.py`, wiring key listeners and ensuring instructions don’t obstruct exploration.
+- [X] T011 [P] [US2] Implement control overlay UI in `src/haemwend/sandbox/ui.py` that displays movement/look/sprint/help hints and toggles via the `H` key.
+- [X] T012 [US2] Extend `src/haemwend/sandbox/camera.py` to enforce the 30 m radius boundary with gentle redirection and maintain ground-height constraints.
+- [X] T013 [US2] Integrate the overlay and boundary feedback within `src/haemwend/sandbox/runtime.py`, wiring key listeners and ensuring instructions don’t obstruct exploration.
 
 **Checkpoint**: User Stories 1 & 2 operate independently with discoverable controls and safe navigation.
 
