@@ -33,6 +33,12 @@ class SandboxRunner:
     _LOGGER_COMPONENT: Final[str] = "runtime"
     _FEEDBACK_TASK_NAME: Final[str] = "sandbox-ui-feedback"
     _GROUND_HEIGHT: Final[float] = 1.6
+    _DISPLAY_FAILURE_SIGNATURES: Final[tuple[str, ...]] = (
+        "no graphics pipe is available",
+        "could not open window",
+        "unable to open 'onscreen' window",
+        "unable to open onscreen window",
+    )
 
     def __init__(self, config_path: Path | None = None) -> None:
         self._config_path = Path(config_path) if config_path is not None else DEFAULT_CONFIG_PATH
@@ -45,6 +51,7 @@ class SandboxRunner:
         self._event_bindings: list[str] = []
         self._task_handles: list[str] = []
         self._session_start: float | None = None
+        self._display_backend: str | None = None
 
     @property
     def config_path(self) -> Path:
@@ -132,7 +139,16 @@ class SandboxRunner:
             },
         )
 
-        app = SandboxApp()
+        app, error_message = self._create_application()
+        if app is None:
+            self._display_backend = None
+            self._logger.error(
+                "sandbox.display.unavailable",
+                reason=error_message,
+                suggestion="Install OpenGL drivers or ensure Panda3D's p3tinydisplay backend is available.",
+            )
+            return False
+
         self._app = app
 
         camera_settings = self._camera_settings_from_config(config)
@@ -175,6 +191,7 @@ class SandboxRunner:
                 duration_seconds=duration,
                 primitive_count=primitive_count,
                 overrides_applied=bool(overrides),
+                display_backend=self._display_backend,
             )
         return True
 
@@ -204,6 +221,7 @@ class SandboxRunner:
 
         self._ui = None
         self._running = False
+        self._display_backend = None
 
     def __repr__(self) -> str:  # pragma: no cover - helper for debugging
         return f"SandboxRunner(config_path={self._config_path!s}, running={self._running})"
@@ -242,7 +260,7 @@ class SandboxRunner:
         self._ui.toggle()
         self._logger.info("sandbox.help.toggled", visible=self._ui.visible)
 
-    def _update_feedback_task(self, task: Task) -> int:
+    def _update_feedback_task(self, task: Any) -> int:
         camera = self._camera
         ui = self._ui
         if camera is not None and ui is not None:
@@ -326,3 +344,60 @@ class SandboxRunner:
             f"H — toggle help | Boundary {boundary_radius:.0f} m",
             "Esc — quit window",
         ]
+
+    def _create_application(self) -> tuple[SandboxApp | None, str | None]:
+        """Instantiate the Panda3D application with graceful fallback."""
+
+        backend = "default"
+        try:
+            app = SandboxApp()
+        except Exception as exc:  # pragma: no cover - exercised via tests with monkeypatching
+            if not self._is_graphics_pipe_error(exc):
+                raise
+
+            fallback_backend = self._configure_software_display()
+            if fallback_backend is None:
+                return None, f"no graphics backend available (original error: {exc})"
+
+            backend = fallback_backend
+            self._logger.warning(
+                "sandbox.display.fallback",
+                backend=fallback_backend,
+                reason=str(exc),
+            )
+
+            try:
+                app = SandboxApp()
+            except Exception as fallback_exc:  # pragma: no cover - defensive guardrail
+                combined_reason = (
+                    "fallback display backend failed",
+                    str(exc),
+                    str(fallback_exc),
+                )
+                return None, " | ".join(combined_reason)
+
+        self._display_backend = backend
+        if backend != "default":
+            self._logger.info("sandbox.display.selected", backend=backend)
+        else:
+            self._logger.debug("sandbox.display.selected", backend=backend)
+        return app, None
+
+    def _configure_software_display(self) -> str | None:
+        """Configure Panda3D to use a software renderer when hardware pipes fail."""
+
+        try:
+            from panda3d.core import loadPrcFileData  # type: ignore[import-not-found]
+        except ImportError:
+            return None
+
+        loadPrcFileData("", "load-display p3tinydisplay")
+        loadPrcFileData("", "aux-display p3tinydisplay")
+        loadPrcFileData("", "window-type offscreen")
+        loadPrcFileData("", "audio-library-name null")
+        loadPrcFileData("", "audio-device null")
+        return "p3tinydisplay"
+
+    def _is_graphics_pipe_error(self, exc: Exception) -> bool:
+        message = str(exc).lower()
+        return any(signature in message for signature in self._DISPLAY_FAILURE_SIGNATURES)

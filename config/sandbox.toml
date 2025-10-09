@@ -1,0 +1,33 @@
+# Panda3D sandbox defaults
+
+enabled = true
+
+[camera]
+move_speed = 5.5
+sprint_multiplier = 1.8
+mouse_sensitivity = 0.15
+vertical_look_limit = 82.0
+
+[environment]
+boundary_radius = 30.0
+
+[[environment.primitives]]
+name = "central_obelisk"
+type = "cylinder"
+position = [0.0, 0.0, 0.0]
+scale = [1.0, 1.0, 6.0]
+color = [0.6, 0.5, 0.8, 1.0]
+
+[[environment.primitives]]
+name = "west_pillar"
+type = "cube"
+position = [-8.0, 5.0, 0.0]
+scale = [2.0, 2.0, 4.0]
+color = [0.3, 0.7, 0.5, 1.0]
+
+[[environment.primitives]]
+name = "north_orb"
+type = "sphere"
+position = [4.0, 12.0, 2.5]
+scale = [1.5, 1.5, 1.5]
+color = [0.9, 0.6, 0.2, 1.0]

@@ -90,7 +90,9 @@ class SandboxCameraController:
 
         props = WindowProperties()
         props.setCursorHidden(False)
-        base.win.requestProperties(props)
+        window = base.win
+        if window is not None and hasattr(window, "requestProperties"):
+            window.requestProperties(props)
 
         self._base = None
         self._window_center = None
@@ -130,14 +132,17 @@ class SandboxCameraController:
         if window is None:
             return
 
-        width = window.getXSize()
-        height = window.getYSize()
-        self._window_center = (width // 2, height // 2)
+        width = window.getXSize() if hasattr(window, "getXSize") else 0
+        height = window.getYSize() if hasattr(window, "getYSize") else 0
+        self._window_center = (width // 2, height // 2) if width and height else None
 
-        props = WindowProperties()
-        props.setCursorHidden(True)
-        self._base.win.requestProperties(props)
-        window.movePointer(0, *self._window_center)
+        if hasattr(window, "requestProperties"):
+            props = WindowProperties()
+            props.setCursorHidden(True)
+            window.requestProperties(props)
+
+        if self._window_center is not None and hasattr(window, "movePointer"):
+            window.movePointer(0, *self._window_center)
 
     def _register_input_events(self, base: ShowBase) -> None:
         bindings = {
@@ -159,10 +164,21 @@ class SandboxCameraController:
         self._key_state[action] = pressed
 
     def _update_mouse_look(self, base: ShowBase) -> None:
-        if self._window_center is None or base.win is None or not base.mouseWatcherNode.hasMouse():
+        window = base.win
+        mouse_watcher = getattr(base, "mouseWatcherNode", None)
+        camera = getattr(base, "camera", None)
+        if (
+            self._window_center is None
+            or window is None
+            or camera is None
+            or mouse_watcher is None
+            or not hasattr(window, "getPointer")
+            or not hasattr(window, "movePointer")
+            or not mouse_watcher.hasMouse()
+        ):
             return
 
-        pointer = base.win.getPointer(0)
+        pointer = window.getPointer(0)
         center_x, center_y = self._window_center
         delta_x = pointer.getX() - center_x
         delta_y = pointer.getY() - center_y
@@ -177,12 +193,17 @@ class SandboxCameraController:
             min(self.settings.vertical_look_limit, self._pitch - delta_y * sensitivity),
         )
 
-        base.camera.setHpr(self._yaw, self._pitch, 0.0)
-        base.win.movePointer(0, center_x, center_y)
+        camera.setHpr(self._yaw, self._pitch, 0.0)
+        window.movePointer(0, center_x, center_y)
 
     def _update_movement(self, base: ShowBase, dt: float) -> None:
         direction = Vec3(0, 0, 0)
-        camera_quat = base.camera.getQuat(base.render)
+        camera = getattr(base, "camera", None)
+        render = getattr(base, "render", None)
+        if camera is None or render is None:
+            return
+
+        camera_quat = camera.getQuat(render)
 
         if self._key_state["forward"]:
             direction += camera_quat.getForward()
@@ -206,18 +227,22 @@ class SandboxCameraController:
         if self._key_state["sprint"]:
             speed *= self.settings.sprint_multiplier
 
-        proposed = base.camera.getPos() + direction * speed * dt
+        proposed = camera.getPos() + direction * speed * dt
         constrained = self._constrain_position(proposed)
-        base.camera.setPos(constrained)
+        camera.setPos(constrained)
 
-    def _update_task(self, task: Task) -> int:
+    def _update_task(self, task: Any) -> int:
         dt = float(globalClock.getDt())
         self.update(dt)
         return task.cont
 
     def _apply_constraints(self, base: ShowBase) -> None:
-        constrained = self._constrain_position(base.camera.getPos())
-        base.camera.setPos(constrained)
+        camera = getattr(base, "camera", None)
+        if camera is None:
+            return
+
+        constrained = self._constrain_position(camera.getPos())
+        camera.setPos(constrained)
 
     def _constrain_position(self, position: Vec3) -> Vec3:
         x = float(position.x)

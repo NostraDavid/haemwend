@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Final
+from typing import Any, Final
 
 from direct.showbase.ShowBase import ShowBase  # type: ignore[import-not-found]
-from direct.task import Task  # type: ignore[import-not-found]
 from panda3d.core import Vec4, WindowProperties  # type: ignore[import-not-found]
 
-TaskCallback = Callable[[Task], int]
+TaskCallback = Callable[[Any], int]
 
 __all__ = ["SandboxApp"]
 
@@ -31,10 +30,14 @@ class SandboxApp(ShowBase):
         self.accept("escape", self.userExit)
 
     def _configure_window(self) -> None:
+        window = getattr(self, "win", None)
+        if window is None or not hasattr(window, "requestProperties"):
+            return
+
         props = WindowProperties()
         props.setTitle(self._title)
         props.setSize(1280, 720)
-        self.win.requestProperties(props)
+        window.requestProperties(props)
 
     def _configure_scene(self) -> None:
         self.setBackgroundColor(Vec4(0.03, 0.04, 0.05, 1.0))

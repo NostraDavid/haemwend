@@ -8,6 +8,7 @@
 !.vscode/
 !docs/
 !specs/
+!config/
 
 # unignore files
 !.gitignore

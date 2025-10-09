@@ -7,7 +7,7 @@ import sys
 from typing import Any
 
 import structlog
-from structlog.stdlib import BoundLogger, add_logger_name
+from structlog.stdlib import BoundLogger, LoggerFactory, add_logger_name
 
 __all__ = ["configure_logging", "get_logger"]
 
@@ -40,7 +40,7 @@ def configure_logging(level: int | str = "INFO") -> None:
             structlog.processors.JSONRenderer(),
         ],
         wrapper_class=structlog.make_filtering_bound_logger(resolved_level),
-        logger_factory=structlog.PrintLoggerFactory(file=sys.stdout),
+        logger_factory=LoggerFactory(),
         cache_logger_on_first_use=True,
     )
 
