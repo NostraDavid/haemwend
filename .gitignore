@@ -17,6 +17,8 @@
 !uv.lock
 !README.md
 !CHANGELOG.md
+!flake.nix
+!flake.lock
 
 # re-ignore
 __pycache__

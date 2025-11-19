@@ -116,9 +116,13 @@ def _instantiate_primitive(
     if primitive_type == "cube":
         node.setHpr(45, 0, 0)
     elif primitive_type == "cylinder":
-        node.setScale(node.getScale() * LVector3f(0.6, 0.6, 1.0))
+        scale = node.getScale()
+        scale.componentwiseMult(LVector3f(0.6, 0.6, 1.0))
+        node.setScale(scale)
     elif primitive_type == "sphere":
-        node.setScale(node.getScale() * LVector3f(0.8, 0.8, 0.8))
+        scale = node.getScale()
+        scale.componentwiseMult(LVector3f(0.8, 0.8, 0.8))
+        node.setScale(scale)
 
     node.reparentTo(base.render)
     logger.info(
