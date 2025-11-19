@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import re
+import shutil
+import subprocess
 from dataclasses import asdict
 from pathlib import Path
 from time import perf_counter
@@ -16,13 +19,16 @@ from haemwend.infrastructure.config_loader import (
 from haemwend.infrastructure.logging import get_logger
 from haemwend.sandbox.app import SandboxApp
 from haemwend.sandbox.camera import CameraSettings, SandboxCameraController
+from haemwend.sandbox.character import Character
 from haemwend.sandbox.environment import build_environment
 from haemwend.sandbox.ui import SandboxUI
 
 if TYPE_CHECKING:
     from direct.task import Task  # type: ignore[import-not-found]
+    from panda3d.core import Vec3  # type: ignore[import-not-found]
 else:  # pragma: no cover - runtime fallback when Panda3D is unavailable
     Task = Any  # type: ignore[misc,assignment]
+    from panda3d.core import Vec3
 
 __all__ = ["SandboxRunner"]
 
@@ -32,6 +38,7 @@ class SandboxRunner:
 
     _LOGGER_COMPONENT: Final[str] = "runtime"
     _FEEDBACK_TASK_NAME: Final[str] = "sandbox-ui-feedback"
+    _CHARACTER_TASK_NAME: Final[str] = "sandbox-character-update"
     _GROUND_HEIGHT: Final[float] = 1.6
     _DISPLAY_FAILURE_SIGNATURES: Final[tuple[str, ...]] = (
         "no graphics pipe is available",
@@ -47,11 +54,20 @@ class SandboxRunner:
         self._running = False
         self._app: SandboxApp | None = None
         self._camera: SandboxCameraController | None = None
+        self._character: Character | None = None
         self._ui: SandboxUI | None = None
         self._event_bindings: list[str] = []
         self._task_handles: list[str] = []
         self._session_start: float | None = None
         self._display_backend: str | None = None
+
+        self._key_state: dict[str, bool] = {
+            "forward": False,
+            "back": False,
+            "left": False,
+            "right": False,
+            "jump": False,
+        }
 
     @property
     def config_path(self) -> Path:
@@ -86,10 +102,7 @@ class SandboxRunner:
             enabled=config.enabled,
             overrides_applied=bool(overrides),
             camera={
-                "move_speed": config.camera.move_speed,
-                "sprint_multiplier": config.camera.sprint_multiplier,
                 "mouse_sensitivity": config.camera.mouse_sensitivity,
-                "vertical_look_limit": config.camera.vertical_look_limit,
             },
             environment={
                 "boundary_radius": config.environment.boundary_radius,
@@ -127,10 +140,10 @@ class SandboxRunner:
             config_path=str(self._config_path),
             overrides_applied=bool(overrides),
             camera={
-                "move_speed": camera_config.move_speed,
-                "sprint_multiplier": camera_config.sprint_multiplier,
+                "distance": camera_config.distance,
+                "height": camera_config.height,
                 "mouse_sensitivity": camera_config.mouse_sensitivity,
-                "vertical_look_limit": camera_config.vertical_look_limit,
+                "zoom_speed": camera_config.zoom_speed,
             },
             environment={
                 "boundary_radius": environment.boundary_radius,
@@ -151,9 +164,12 @@ class SandboxRunner:
 
         self._app = app
 
+        # Initialize Character
+        self._character = Character(app, start_pos=Vec3(0, -10, 0))
+
         camera_settings = self._camera_settings_from_config(config)
         camera = SandboxCameraController(settings=camera_settings)
-        camera.bind(app)
+        camera.bind(app, self._character)
         self._camera = camera
 
         help_lines = self._format_help_lines(config)
@@ -161,10 +177,9 @@ class SandboxRunner:
         ui.bind(app)
         self._ui = ui
 
-        ui.update_boundary_feedback(0.0)
-
         self._register_runtime_bindings(app)
         self._register_feedback_task(app)
+        self._register_character_task(app)
 
         build_environment(app, config=config)
 
@@ -177,6 +192,9 @@ class SandboxRunner:
             if self._camera is not None:
                 self._camera.unbind()
                 self._camera = None
+            if self._character is not None:
+                self._character.cleanup()
+                self._character = None
             if self._ui is not None:
                 self._ui.unbind()
                 self._ui = None
@@ -234,10 +252,32 @@ class SandboxRunner:
             app.accept(event, self._handle_help_toggle)
             self._event_bindings.append(event)
 
+        # Character movement bindings
+        bindings = {
+            "w": "forward",
+            "s": "back",
+            "a": "left",
+            "d": "right",
+            "space": "jump",
+        }
+        for key, action in bindings.items():
+            app.accept(key, self._set_key_state, [action, True])
+            app.accept(f"{key}-up", self._set_key_state, [action, False])
+            self._event_bindings.append(key)
+            self._event_bindings.append(f"{key}-up")
+
+    def _set_key_state(self, action: str, pressed: bool) -> None:
+        self._key_state[action] = pressed
+
     def _register_feedback_task(self, app: SandboxApp) -> None:
         handle = app.taskMgr.add(self._update_feedback_task, self._FEEDBACK_TASK_NAME)
         if handle is not None:
             self._task_handles.append(self._FEEDBACK_TASK_NAME)
+
+    def _register_character_task(self, app: SandboxApp) -> None:
+        handle = app.taskMgr.add(self._update_character_task, self._CHARACTER_TASK_NAME)
+        if handle is not None:
+            self._task_handles.append(self._CHARACTER_TASK_NAME)
 
     def _cleanup_runtime_bindings(self) -> None:
         app = self._app
@@ -261,10 +301,35 @@ class SandboxRunner:
         self._logger.info("sandbox.help.toggled", visible=self._ui.visible)
 
     def _update_feedback_task(self, task: Any) -> int:
-        camera = self._camera
-        ui = self._ui
-        if camera is not None and ui is not None:
-            ui.update_boundary_feedback(camera.boundary_ratio)
+        # Feedback task is currently unused but kept for future UI updates
+        return task.cont
+
+    def _update_character_task(self, task: Any) -> int:
+        if self._character is None:
+            return task.cont
+
+        from direct.showbase.ShowBaseGlobal import globalClock  # type: ignore[import-not-found]
+
+        dt = float(globalClock.getDt())
+
+        direction = Vec3(0, 0, 0)
+        if self._key_state["forward"]:
+            direction += Vec3(0, 1, 0)
+        if self._key_state["back"]:
+            direction += Vec3(0, -1, 0)
+        if self._key_state["left"]:
+            direction += Vec3(-1, 0, 0)
+        if self._key_state["right"]:
+            direction += Vec3(1, 0, 0)
+
+        if direction.lengthSquared() > 0:
+            direction.normalize()
+
+        if self._key_state["jump"]:
+            self._character.jump()
+
+        self._character.move(direction, dt)
+
         return task.cont
 
     def _apply_config_to_runtime(self, config: SandboxConfig) -> None:
@@ -281,15 +346,16 @@ class SandboxRunner:
             ui.set_control_instructions(self._format_help_lines(config))
 
     def _camera_settings_from_config(self, config: SandboxConfig) -> CameraSettings:
-        environment = config.environment
         camera = config.camera
         return CameraSettings(
-            move_speed=camera.move_speed,
-            sprint_multiplier=camera.sprint_multiplier,
+            distance=camera.distance,
+            height=camera.height,
             mouse_sensitivity=camera.mouse_sensitivity,
-            vertical_look_limit=camera.vertical_look_limit,
-            boundary_radius=environment.boundary_radius,
-            ground_height=self._GROUND_HEIGHT,
+            min_pitch=camera.min_pitch,
+            max_pitch=camera.max_pitch,
+            zoom_speed=camera.zoom_speed,
+            min_distance=camera.min_distance,
+            max_distance=camera.max_distance,
         )
 
     def _log_config_overrides(self, config: SandboxConfig, *, action: str) -> dict[str, Any]:
@@ -334,19 +400,20 @@ class SandboxRunner:
         return None
 
     def _format_help_lines(self, config: SandboxConfig) -> list[str]:
-        camera = config.camera
         boundary_radius = config.environment.boundary_radius
         return [
-            f"W / A / S / D — walk ({camera.move_speed:.1f} m/s)",
-            f"Mouse — look (sensitivity {camera.mouse_sensitivity:.2f})",
-            f"Shift — sprint (x{camera.sprint_multiplier:.1f})",
-            "Space / Ctrl — rise & descend",
+            "W / A / S / D — move character",
+            "Right Click + Drag — rotate character & camera",
+            "Left Click + Drag — orbit camera",
+            "Scroll — zoom",
             f"H — toggle help | Boundary {boundary_radius:.0f} m",
             "Esc — quit window",
         ]
 
     def _create_application(self) -> tuple[SandboxApp | None, str | None]:
         """Instantiate the Panda3D application with graceful fallback."""
+
+        self._configure_window_position()
 
         backend = "default"
         try:
@@ -382,6 +449,76 @@ class SandboxRunner:
         else:
             self._logger.debug("sandbox.display.selected", backend=backend)
         return app, None
+
+    def _configure_window_position(self) -> None:
+        try:
+            from panda3d.core import loadPrcFileData
+        except ImportError:
+            return
+
+        monitor_index = self.config.window.monitor_index
+        geometry = self._get_monitor_geometry(monitor_index)
+
+        if geometry:
+            width, height, x, y = geometry
+            # Center the 1280x720 window on this monitor
+            win_width = 1280
+            win_height = 720
+
+            center_x = x + (width - win_width) // 2
+            center_y = y + (height - win_height) // 2
+
+            self._logger.info(
+                "sandbox.window.position",
+                monitor_index=monitor_index,
+                monitor_geometry=geometry,
+                window_origin=(center_x, center_y),
+            )
+            loadPrcFileData("", f"win-origin {center_x} {center_y}")
+        else:
+            self._logger.warning(
+                "sandbox.window.monitor_not_found",
+                monitor_index=monitor_index,
+                available_monitors=self._list_monitors(),
+            )
+            # Fallback: if index 0, try centering (though it might span screens)
+            if monitor_index == 0:
+                loadPrcFileData("", "win-origin -2 -2")
+
+    def _list_monitors(self) -> list[str]:
+        xrandr_path = shutil.which("xrandr")
+        if not xrandr_path:
+            return []
+        try:
+            output = subprocess.check_output([xrandr_path, "--listmonitors"], text=True)
+            return output.splitlines()
+        except subprocess.SubprocessError:
+            return []
+
+    def _get_monitor_geometry(self, index: int) -> tuple[int, int, int, int] | None:
+        """Return (width, height, x, y) for the specified monitor index."""
+        xrandr_path = shutil.which("xrandr")
+        if not xrandr_path:
+            return None
+
+        try:
+            output = subprocess.check_output([xrandr_path, "--listmonitors"], text=True)
+        except subprocess.SubprocessError:
+            return None
+
+        # Parse output: 0: +*DP-4 3840/600x2160/340+0+0  DP-4
+        for line in output.splitlines():
+            match = re.search(r"^\s*(\d+):.*?\s+(\d+)/?\d*x(\d+)/?\d*\+(\d+)\+(\d+)", line)
+            if match:
+                mon_idx = int(match.group(1))
+                if mon_idx == index:
+                    return (
+                        int(match.group(2)),  # width
+                        int(match.group(3)),  # height
+                        int(match.group(4)),  # x
+                        int(match.group(5)),  # y
+                    )
+        return None
 
     def _configure_software_display(self) -> str | None:
         """Configure Panda3D to use a software renderer when hardware pipes fail."""

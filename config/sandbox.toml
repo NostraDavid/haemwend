@@ -3,10 +3,17 @@
 enabled = true
 
 [camera]
-move_speed = 5.5
-sprint_multiplier = 1.8
-mouse_sensitivity = 0.15
-vertical_look_limit = 82.0
+distance = 20.0
+height = 2.0
+mouse_sensitivity = 0.1
+min_pitch = -90.0
+max_pitch = 90.0
+zoom_speed = 1.0
+min_distance = 2.0
+max_distance = 25.0
+
+[window]
+monitor_index = 0
 
 [environment]
 boundary_radius = 30.0

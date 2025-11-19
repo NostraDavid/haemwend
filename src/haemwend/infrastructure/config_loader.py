@@ -52,10 +52,21 @@ class EnvironmentConfig:
 class CameraConfig:
     """Camera tuning options for sandbox traversal."""
 
-    move_speed: float = 5.5
-    sprint_multiplier: float = 1.8
-    mouse_sensitivity: float = 0.15
-    vertical_look_limit: float = 82.0
+    distance: float = 10.0
+    height: float = 2.0
+    mouse_sensitivity: float = 0.2
+    min_pitch: float = -20.0
+    max_pitch: float = 60.0
+    zoom_speed: float = 1.0
+    min_distance: float = 2.0
+    max_distance: float = 20.0
+
+
+@dataclass(slots=True)
+class WindowConfig:
+    """Window display settings."""
+
+    monitor_index: int = 0
 
 
 @dataclass(slots=True)
@@ -65,20 +76,23 @@ class SandboxConfig:
     enabled: bool = True
     camera: CameraConfig = field(default_factory=CameraConfig)
     environment: EnvironmentConfig = field(default_factory=EnvironmentConfig)
+    window: WindowConfig = field(default_factory=WindowConfig)
 
 
 DEFAULT_CONFIG_PATH: Path = Path(__file__).resolve().parents[3] / "config" / "sandbox.toml"
 
 _MIN_BOUNDARY_RADIUS = 5.0
 _MAX_BOUNDARY_RADIUS = 150.0
-_MIN_MOVE_SPEED = 0.5
-_MAX_MOVE_SPEED = 30.0
-_MIN_SPRINT_MULTIPLIER = 1.0
-_MAX_SPRINT_MULTIPLIER = 6.0
+_MIN_DISTANCE = 1.0
+_MAX_DISTANCE = 100.0
+_MIN_HEIGHT = 0.0
+_MAX_HEIGHT = 10.0
 _MIN_MOUSE_SENSITIVITY = 0.01
 _MAX_MOUSE_SENSITIVITY = 1.0
-_MIN_VERTICAL_LOOK_LIMIT = 30.0
-_MAX_VERTICAL_LOOK_LIMIT = 90.0
+_MIN_PITCH = -90.0
+_MAX_PITCH = 90.0
+_MIN_ZOOM_SPEED = 0.1
+_MAX_ZOOM_SPEED = 10.0
 _MIN_SCALE = 0.1
 _MAX_SCALE = 20.0
 _ALLOWED_PRIMITIVE_TYPES = {"cube", "cylinder", "sphere", "card", "plane"}
@@ -110,10 +124,12 @@ DEFAULT_PRIMITIVES: tuple[PrimitiveConfig, ...] = (
 
 DEFAULT_CAMERA_CONFIG = CameraConfig()
 DEFAULT_ENVIRONMENT_CONFIG = EnvironmentConfig(boundary_radius=30.0, primitives=DEFAULT_PRIMITIVES)
+DEFAULT_WINDOW_CONFIG = WindowConfig()
 DEFAULT_SANDBOX_CONFIG = SandboxConfig(
     enabled=True,
     camera=DEFAULT_CAMERA_CONFIG,
     environment=DEFAULT_ENVIRONMENT_CONFIG,
+    window=DEFAULT_WINDOW_CONFIG,
 )
 
 
@@ -144,23 +160,26 @@ def parse_sandbox_config(payload: Mapping[str, Any], *, source: Path | None = No
     environment_section = _as_dict(payload.get("environment"), "environment", source)
     environment = _parse_environment(environment_section, source)
 
-    return SandboxConfig(enabled=enabled, camera=camera, environment=environment)
+    window_section = _as_dict(payload.get("window"), "window", source)
+    window = _parse_window(window_section, source)
+
+    return SandboxConfig(enabled=enabled, camera=camera, environment=environment, window=window)
 
 
 def _parse_camera(section: Mapping[str, Any], source: Path | None) -> CameraConfig:
-    move_speed = _bounded_float(
-        section.get("move_speed", DEFAULT_CAMERA_CONFIG.move_speed),
-        "camera.move_speed",
+    distance = _bounded_float(
+        section.get("distance", DEFAULT_CAMERA_CONFIG.distance),
+        "camera.distance",
         source,
-        min_value=_MIN_MOVE_SPEED,
-        max_value=_MAX_MOVE_SPEED,
+        min_value=_MIN_DISTANCE,
+        max_value=_MAX_DISTANCE,
     )
-    sprint_multiplier = _bounded_float(
-        section.get("sprint_multiplier", DEFAULT_CAMERA_CONFIG.sprint_multiplier),
-        "camera.sprint_multiplier",
+    height = _bounded_float(
+        section.get("height", DEFAULT_CAMERA_CONFIG.height),
+        "camera.height",
         source,
-        min_value=_MIN_SPRINT_MULTIPLIER,
-        max_value=_MAX_SPRINT_MULTIPLIER,
+        min_value=_MIN_HEIGHT,
+        max_value=_MAX_HEIGHT,
     )
     mouse_sensitivity = _bounded_float(
         section.get("mouse_sensitivity", DEFAULT_CAMERA_CONFIG.mouse_sensitivity),
@@ -169,19 +188,51 @@ def _parse_camera(section: Mapping[str, Any], source: Path | None) -> CameraConf
         min_value=_MIN_MOUSE_SENSITIVITY,
         max_value=_MAX_MOUSE_SENSITIVITY,
     )
-    vertical_look_limit = _bounded_float(
-        section.get("vertical_look_limit", DEFAULT_CAMERA_CONFIG.vertical_look_limit),
-        "camera.vertical_look_limit",
+    min_pitch = _bounded_float(
+        section.get("min_pitch", DEFAULT_CAMERA_CONFIG.min_pitch),
+        "camera.min_pitch",
         source,
-        min_value=_MIN_VERTICAL_LOOK_LIMIT,
-        max_value=_MAX_VERTICAL_LOOK_LIMIT,
+        min_value=_MIN_PITCH,
+        max_value=_MAX_PITCH,
+    )
+    max_pitch = _bounded_float(
+        section.get("max_pitch", DEFAULT_CAMERA_CONFIG.max_pitch),
+        "camera.max_pitch",
+        source,
+        min_value=_MIN_PITCH,
+        max_value=_MAX_PITCH,
+    )
+    zoom_speed = _bounded_float(
+        section.get("zoom_speed", DEFAULT_CAMERA_CONFIG.zoom_speed),
+        "camera.zoom_speed",
+        source,
+        min_value=_MIN_ZOOM_SPEED,
+        max_value=_MAX_ZOOM_SPEED,
+    )
+    min_distance = _bounded_float(
+        section.get("min_distance", DEFAULT_CAMERA_CONFIG.min_distance),
+        "camera.min_distance",
+        source,
+        min_value=_MIN_DISTANCE,
+        max_value=_MAX_DISTANCE,
+    )
+    max_distance = _bounded_float(
+        section.get("max_distance", DEFAULT_CAMERA_CONFIG.max_distance),
+        "camera.max_distance",
+        source,
+        min_value=_MIN_DISTANCE,
+        max_value=_MAX_DISTANCE,
     )
 
     return CameraConfig(
-        move_speed=move_speed,
-        sprint_multiplier=sprint_multiplier,
+        distance=distance,
+        height=height,
         mouse_sensitivity=mouse_sensitivity,
-        vertical_look_limit=vertical_look_limit,
+        min_pitch=min_pitch,
+        max_pitch=max_pitch,
+        zoom_speed=zoom_speed,
+        min_distance=min_distance,
+        max_distance=max_distance,
     )
 
 
@@ -243,6 +294,11 @@ def _parse_environment(section: Mapping[str, Any], source: Path | None) -> Envir
         primitives = list(DEFAULT_PRIMITIVES)
 
     return EnvironmentConfig(boundary_radius=boundary_radius, primitives=tuple(primitives))
+
+
+def _parse_window(section: Mapping[str, Any], source: Path | None) -> WindowConfig:
+    monitor_index = int(section.get("monitor_index", DEFAULT_WINDOW_CONFIG.monitor_index))
+    return WindowConfig(monitor_index=monitor_index)
 
 
 def _positive_float(value: Any, field: str, source: Path | None) -> float:

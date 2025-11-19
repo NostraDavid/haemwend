@@ -161,24 +161,6 @@ class SandboxUI:
     def update_boundary_feedback(self, ratio: float) -> None:
         """Display a hint when the camera approaches or exits the boundary."""
 
-        boundary = self._boundary_label
-        if boundary is None:
-            return
-        if not self.visible:
-            boundary.hide()
-            return
-
-        if ratio >= 1.0:
-            boundary.setFg((1.0, 0.45, 0.4, 1.0))
-            boundary.setText("Boundary reached — redirecting inside")
-            boundary.show()
-        elif ratio >= 0.9:
-            boundary.setFg((1.0, 0.75, 0.35, 1.0))
-            boundary.setText("Approaching perimeter — turn back soon")
-            boundary.show()
-        else:
-            boundary.hide()
-
     # Content --------------------------------------------------------
 
     def set_control_instructions(self, lines: list[str] | tuple[str, ...]) -> None:

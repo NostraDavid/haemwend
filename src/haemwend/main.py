@@ -18,3 +18,7 @@ def main() -> None:
     finally:
         runner.shutdown()
         logger.info("sandbox.cli.exit")
+
+
+if __name__ == "__main__":
+    main()

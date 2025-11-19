@@ -11,7 +11,12 @@ else:  # pragma: no cover - runtime fallback when type hints are unavailable
     ShowBase = Any  # type: ignore[misc,assignment]
 from panda3d.core import (  # type: ignore[import-not-found]
     AmbientLight,
+    BitMask32,
     CardMaker,
+    CollisionBox,
+    CollisionCapsule,
+    CollisionNode,
+    CollisionSphere,
     DirectionalLight,
     LPoint3f,
     LVector3f,
@@ -113,16 +118,26 @@ def _instantiate_primitive(
     node.setColor(Vec4(*primitive.color))
 
     primitive_type = primitive.type.lower()
+    c_node = CollisionNode(f"{primitive.name}-collision")
+
     if primitive_type == "cube":
         node.setHpr(45, 0, 0)
+        # Box is -0.5 to 0.5
+        c_node.addSolid(CollisionBox(LPoint3f(0, 0, 0), 0.5, 0.5, 0.5))
     elif primitive_type == "cylinder":
         scale = node.getScale()
         scale.componentwiseMult(LVector3f(0.6, 0.6, 1.0))
         node.setScale(scale)
+        # Cylinder is Z-up, radius 0.5, height 1.0 (-0.5 to 0.5)
+        c_node.addSolid(CollisionCapsule(0, 0, -0.5, 0, 0, 0.5, 0.5))
     elif primitive_type == "sphere":
         scale = node.getScale()
         scale.componentwiseMult(LVector3f(0.8, 0.8, 0.8))
         node.setScale(scale)
+        c_node.addSolid(CollisionSphere(0, 0, 0, 0.5))
+
+    c_node.setIntoCollideMask(BitMask32.bit(0))
+    node.attachNewNode(c_node)
 
     node.reparentTo(base.render)
     logger.info(
