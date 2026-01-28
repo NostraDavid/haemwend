@@ -1,25 +1,3 @@
-/*
-
-# unignore dirs
-!src/
-!tests/
-!.github/
-!.specify/
-!.vscode/
-!docs/
-!specs/
-!config/
-
-# unignore files
-!.gitignore
-!.python-version
-!pyproject.toml
-!uv.lock
-!README.md
-!CHANGELOG.md
-!flake.nix
-!flake.lock
-
-# re-ignore
-__pycache__
-*.egg-info
+# Godot 4+ specific ignores
+.godot/
+/android/
