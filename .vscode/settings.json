@@ -1,13 +1,22 @@
 {
-    "chat.promptFilesRecommendations": {
-        "speckit.constitution": true,
-        "speckit.specify": true,
-        "speckit.plan": true,
-        "speckit.tasks": true,
-        "speckit.implement": true
+    "workbench.colorCustomizations": {
+        "activityBar.activeBackground": "#2e47dc",
+        "activityBar.background": "#2e47dc",
+        "activityBar.foreground": "#e7e7e7",
+        "activityBar.inactiveForeground": "#e7e7e799",
+        "activityBarBadge.background": "#520e18",
+        "activityBarBadge.foreground": "#e7e7e7",
+        "commandCenter.border": "#e7e7e799",
+        "sash.hoverBorder": "#2e47dc",
+        "statusBar.background": "#1f35b8",
+        "statusBar.foreground": "#e7e7e7",
+        "statusBarItem.hoverBackground": "#2e47dc",
+        "statusBarItem.remoteBackground": "#1f35b8",
+        "statusBarItem.remoteForeground": "#e7e7e7",
+        "titleBar.activeBackground": "#1f35b8",
+        "titleBar.activeForeground": "#e7e7e7",
+        "titleBar.inactiveBackground": "#1f35b899",
+        "titleBar.inactiveForeground": "#e7e7e799"
     },
-    "chat.tools.terminal.autoApprove": {
-        ".specify/scripts/bash/": true,
-        ".specify/scripts/ps/": true
-    }
+    "peacock.color": "#1f35b8"
 }
