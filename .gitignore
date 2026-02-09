@@ -5,6 +5,9 @@
 !README.md
 !flake.nix
 !flake.lock
+!Cargo.toml
+!Cargo.lock
 
 # folders
 !docs/
+!src/
