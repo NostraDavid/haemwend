@@ -1,3 +1,4 @@
+# nix develop
 {
   description = "Rust development shell for haemwend";
 
@@ -22,7 +23,7 @@
           overlays = [ (import rust-overlay) ];
         };
 
-        rustToolchain = pkgs.rust-bin.stable.latest.default.override {
+        rustToolchain = pkgs.rust-bin.stable."1.93.0".default.override {
           extensions = [
             "clippy"
             "rust-src"
