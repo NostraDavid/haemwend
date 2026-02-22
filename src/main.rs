@@ -1,6 +1,8 @@
-use bevy::prelude::*;
+use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::input::mouse::AccumulatedMouseMotion;
+use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowResolution};
+use std::time::Duration;
 
 fn main() {
     App::new()
@@ -13,6 +15,13 @@ fn main() {
             }),
             ..default()
         }))
+        .add_plugins((
+            FrameTimeDiagnosticsPlugin::default(),
+            LogDiagnosticsPlugin {
+                wait_duration: Duration::from_secs(2),
+                ..default()
+            },
+        ))
         .insert_resource(GlobalAmbientLight {
             color: Color::srgb(0.6, 0.65, 0.7),
             brightness: 250.0,
@@ -20,6 +29,7 @@ fn main() {
         })
         .add_systems(Startup, setup_world)
         .add_systems(Update, (player_move, third_person_camera).chain())
+        .add_systems(Update, update_performance_overlay)
         .run();
 }
 
@@ -38,6 +48,9 @@ struct ThirdPersonCameraRig {
     height: f32,
     focus_height: f32,
 }
+
+#[derive(Component)]
+struct PerformanceOverlayText;
 
 impl Default for Player {
     fn default() -> Self {
@@ -165,6 +178,17 @@ fn setup_world(
         .with_child(Text::new(
             "W/A/S/D: Move\nShift: Sprint\nHold Right Mouse: Orbit camera",
         ));
+
+    commands.spawn((
+        PerformanceOverlayText,
+        Text::new("FPS: --\nFrame time: -- ms"),
+        Node {
+            position_type: PositionType::Absolute,
+            top: px(12),
+            right: px(12),
+            ..default()
+        },
+    ));
 }
 
 fn player_move(
@@ -241,4 +265,23 @@ fn third_person_camera(
 
     camera_transform.translation = target + orbit_offset + Vec3::Y * rig.height;
     camera_transform.look_at(target + Vec3::Y * rig.focus_height, Vec3::Y);
+}
+
+fn update_performance_overlay(
+    diagnostics: Res<DiagnosticsStore>,
+    mut text_query: Query<&mut Text, With<PerformanceOverlayText>>,
+) {
+    let fps = diagnostics
+        .get(&FrameTimeDiagnosticsPlugin::FPS)
+        .and_then(|fps| fps.smoothed())
+        .unwrap_or(0.0);
+
+    let frame_time_ms = diagnostics
+        .get(&FrameTimeDiagnosticsPlugin::FRAME_TIME)
+        .and_then(|frame_time| frame_time.smoothed())
+        .unwrap_or(0.0);
+
+    for mut text in &mut text_query {
+        **text = format!("FPS: {fps:>6.1}\nFrame time: {frame_time_ms:>6.2} ms");
+    }
 }
