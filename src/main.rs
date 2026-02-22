@@ -56,6 +56,16 @@ struct ThirdPersonCameraRig {
 #[derive(Component)]
 struct PerformanceOverlayText;
 
+#[derive(Component, Clone, Copy)]
+struct PlayerCollider {
+    half_extents: Vec3,
+}
+
+#[derive(Component, Clone, Copy)]
+struct WorldCollider {
+    half_extents: Vec3,
+}
+
 impl Default for Player {
     fn default() -> Self {
         Self {
@@ -99,6 +109,9 @@ fn setup_world(
         Mesh3d(player_mesh),
         MeshMaterial3d(player_mat),
         Transform::from_xyz(0.0, 0.9, 0.0),
+        PlayerCollider {
+            half_extents: Vec3::new(0.35, 0.9, 0.35),
+        },
     ));
 
     commands.spawn((
@@ -152,11 +165,15 @@ fn setup_world(
 
     for x in -8..=8 {
         for z in -8..=8 {
-            if (x + z) % 4 == 0 {
+            let near_spawn = (-1..=1).contains(&x) && (-1..=1).contains(&z);
+            if (x + z) % 4 == 0 && !near_spawn {
                 commands.spawn((
                     Mesh3d(crate_mesh.clone()),
                     MeshMaterial3d(crate_mat.clone()),
                     Transform::from_xyz(x as f32 * 3.0, 0.5, z as f32 * 3.0),
+                    WorldCollider {
+                        half_extents: Vec3::splat(0.5),
+                    },
                 ));
             }
         }
@@ -167,6 +184,9 @@ fn setup_world(
             Mesh3d(wall_mesh.clone()),
             MeshMaterial3d(wall_mat.clone()),
             Transform::from_xyz(i as f32 * 3.2, 1.5, -20.0),
+            WorldCollider {
+                half_extents: Vec3::splat(1.5),
+            },
         ));
     }
 
@@ -174,6 +194,9 @@ fn setup_world(
         Mesh3d(tower_mesh),
         MeshMaterial3d(tower_mat),
         Transform::from_xyz(0.0, 4.0, -30.0),
+        WorldCollider {
+            half_extents: Vec3::new(2.0, 4.0, 2.0),
+        },
     ));
 
     commands
@@ -206,13 +229,14 @@ fn player_move(
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
     camera_query: Query<&ThirdPersonCameraRig, With<Camera3d>>,
-    mut player_query: Query<(&mut Transform, &Player)>,
+    mut player_query: Query<(&mut Transform, &Player, &PlayerCollider)>,
+    world_colliders: Query<(&Transform, &WorldCollider), Without<Player>>,
 ) {
     let Ok(camera_rig) = camera_query.single() else {
         return;
     };
 
-    let Ok((mut transform, player)) = player_query.single_mut() else {
+    let Ok((mut transform, player, player_collider)) = player_query.single_mut() else {
         return;
     };
 
@@ -249,7 +273,25 @@ fn player_move(
         player.walk_speed
     };
 
-    transform.translation += movement * speed * dt;
+    let desired_delta = movement * speed * dt;
+
+    let mut next_position = transform.translation;
+
+    if desired_delta.x != 0.0 {
+        let candidate = Vec3::new(next_position.x + desired_delta.x, next_position.y, next_position.z);
+        if !would_collide(candidate, player_collider.half_extents, &world_colliders) {
+            next_position.x = candidate.x;
+        }
+    }
+
+    if desired_delta.z != 0.0 {
+        let candidate = Vec3::new(next_position.x, next_position.y, next_position.z + desired_delta.z);
+        if !would_collide(candidate, player_collider.half_extents, &world_colliders) {
+            next_position.z = candidate.z;
+        }
+    }
+
+    transform.translation = next_position;
 }
 
 fn third_person_camera(
@@ -303,4 +345,25 @@ fn update_performance_overlay(
     for mut text in &mut text_query {
         **text = format!("FPS: {fps:>6.1}\nFrame time: {frame_time_ms:>6.2} ms");
     }
+}
+
+fn would_collide(
+    player_center: Vec3,
+    player_half_extents: Vec3,
+    world_colliders: &Query<(&Transform, &WorldCollider), Without<Player>>,
+) -> bool {
+    world_colliders.iter().any(|(world_transform, world_collider)| {
+        intersects_aabb(
+            player_center,
+            player_half_extents,
+            world_transform.translation,
+            world_collider.half_extents,
+        )
+    })
+}
+
+fn intersects_aabb(a_center: Vec3, a_half_extents: Vec3, b_center: Vec3, b_half_extents: Vec3) -> bool {
+    (a_center.x - b_center.x).abs() < (a_half_extents.x + b_half_extents.x)
+        && (a_center.y - b_center.y).abs() < (a_half_extents.y + b_half_extents.y)
+        && (a_center.z - b_center.z).abs() < (a_half_extents.z + b_half_extents.z)
 }
