@@ -38,6 +38,8 @@ struct Player {
     walk_speed: f32,
     sprint_speed: f32,
     turn_speed: f32,
+    jump_speed: f32,
+    gravity: f32,
 }
 
 #[derive(Component)]
@@ -66,12 +68,20 @@ struct WorldCollider {
     half_extents: Vec3,
 }
 
+#[derive(Component, Default)]
+struct PlayerKinematics {
+    vertical_velocity: f32,
+    grounded: bool,
+}
+
 impl Default for Player {
     fn default() -> Self {
         Self {
             walk_speed: 5.5,
             sprint_speed: 9.5,
             turn_speed: 2.8,
+            jump_speed: 7.5,
+            gravity: -20.0,
         }
     }
 }
@@ -112,6 +122,10 @@ fn setup_world(
         PlayerCollider {
             half_extents: Vec3::new(0.35, 0.9, 0.35),
         },
+        PlayerKinematics {
+            vertical_velocity: 0.0,
+            grounded: true,
+        },
     ));
 
     commands.spawn((
@@ -140,6 +154,9 @@ fn setup_world(
         Mesh3d(ground_mesh),
         MeshMaterial3d(ground_mat),
         Transform::from_xyz(0.0, -0.05, 0.0),
+        WorldCollider {
+            half_extents: Vec3::new(60.0, 0.05, 60.0),
+        },
     ));
 
     let wall_mesh = meshes.add(Cuboid::new(3.0, 3.0, 3.0));
@@ -209,7 +226,7 @@ fn setup_world(
         .with_child(Text::new(
             "Tank controls:\nW/S vooruit-achteruit\nQ/E zijwaarts\nA/D draaien\n\
              Rechtermuisknop ingedrukt:\nA/D/Q/E zijwaarts en character kijkt met camera mee\n\
-             Shift: Sprint\nLMB: camera orbit\nScroll: zoom in/uit",
+             Shift: Sprint\nSpace: Springen\nLMB: camera orbit\nScroll: zoom in/uit",
         ));
 
     commands.spawn((
@@ -229,14 +246,15 @@ fn player_move(
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
     camera_query: Query<&ThirdPersonCameraRig, With<Camera3d>>,
-    mut player_query: Query<(&mut Transform, &Player, &PlayerCollider)>,
+    mut player_query: Query<(&mut Transform, &Player, &PlayerCollider, &mut PlayerKinematics)>,
     world_colliders: Query<(&Transform, &WorldCollider), Without<Player>>,
 ) {
     let Ok(camera_rig) = camera_query.single() else {
         return;
     };
 
-    let Ok((mut transform, player, player_collider)) = player_query.single_mut() else {
+    let Ok((mut transform, player, player_collider, mut kinematics)) = player_query.single_mut()
+    else {
         return;
     };
 
@@ -289,6 +307,47 @@ fn player_move(
         if !would_collide(candidate, player_collider.half_extents, &world_colliders) {
             next_position.z = candidate.z;
         }
+    }
+
+    if keys.just_pressed(KeyCode::Space) && kinematics.grounded {
+        kinematics.vertical_velocity = player.jump_speed;
+        kinematics.grounded = false;
+    }
+
+    let vertical_start = next_position;
+    kinematics.vertical_velocity += player.gravity * dt;
+    let proposed_vertical = Vec3::new(
+        vertical_start.x,
+        vertical_start.y + kinematics.vertical_velocity * dt,
+        vertical_start.z,
+    );
+
+    if kinematics.vertical_velocity <= 0.0 {
+        if let Some(landing_top) = find_landing_top(
+            vertical_start,
+            proposed_vertical,
+            player_collider.half_extents,
+            &world_colliders,
+        ) {
+            next_position.y = landing_top + player_collider.half_extents.y;
+            kinematics.vertical_velocity = 0.0;
+            kinematics.grounded = true;
+        } else {
+            next_position.y = proposed_vertical.y;
+            kinematics.grounded = false;
+        }
+    } else if let Some(ceiling_bottom) = find_ceiling_bottom(
+        vertical_start,
+        proposed_vertical,
+        player_collider.half_extents,
+        &world_colliders,
+    ) {
+        next_position.y = ceiling_bottom - player_collider.half_extents.y;
+        kinematics.vertical_velocity = 0.0;
+        kinematics.grounded = false;
+    } else {
+        next_position.y = proposed_vertical.y;
+        kinematics.grounded = false;
     }
 
     transform.translation = next_position;
@@ -360,6 +419,73 @@ fn would_collide(
             world_collider.half_extents,
         )
     })
+}
+
+fn find_landing_top(
+    previous_center: Vec3,
+    proposed_center: Vec3,
+    player_half_extents: Vec3,
+    world_colliders: &Query<(&Transform, &WorldCollider), Without<Player>>,
+) -> Option<f32> {
+    let previous_bottom = previous_center.y - player_half_extents.y;
+    let proposed_bottom = proposed_center.y - player_half_extents.y;
+    let epsilon = 0.0001;
+
+    world_colliders
+        .iter()
+        .filter_map(|(world_transform, world_collider)| {
+            if !intersects_xz(
+                proposed_center,
+                player_half_extents,
+                world_transform.translation,
+                world_collider.half_extents,
+            ) {
+                return None;
+            }
+
+            let collider_top = world_transform.translation.y + world_collider.half_extents.y;
+            let crossed_top =
+                previous_bottom >= collider_top - epsilon && proposed_bottom <= collider_top + epsilon;
+
+            crossed_top.then_some(collider_top)
+        })
+        .max_by(f32::total_cmp)
+}
+
+fn find_ceiling_bottom(
+    previous_center: Vec3,
+    proposed_center: Vec3,
+    player_half_extents: Vec3,
+    world_colliders: &Query<(&Transform, &WorldCollider), Without<Player>>,
+) -> Option<f32> {
+    let previous_top = previous_center.y + player_half_extents.y;
+    let proposed_top = proposed_center.y + player_half_extents.y;
+    let epsilon = 0.0001;
+
+    world_colliders
+        .iter()
+        .filter_map(|(world_transform, world_collider)| {
+            if !intersects_xz(
+                proposed_center,
+                player_half_extents,
+                world_transform.translation,
+                world_collider.half_extents,
+            ) {
+                return None;
+            }
+
+            let collider_bottom = world_transform.translation.y - world_collider.half_extents.y;
+            let crossed_bottom =
+                previous_top <= collider_bottom + epsilon && proposed_top >= collider_bottom - epsilon;
+
+            crossed_bottom.then_some(collider_bottom)
+        })
+        .min_by(f32::total_cmp)
+}
+
+fn intersects_xz(a_center: Vec3, a_half_extents: Vec3, b_center: Vec3, b_half_extents: Vec3) -> bool {
+    (a_center.x - b_center.x).abs() < (a_half_extents.x + b_half_extents.x)
+        && (a_center.z - b_center.z).abs() < (a_half_extents.z + b_half_extents.z)
 }
 
 fn intersects_aabb(a_center: Vec3, a_half_extents: Vec3, b_center: Vec3, b_half_extents: Vec3) -> bool {
