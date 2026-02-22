@@ -6,6 +6,9 @@ default:
 run:
   cargo run --bin haemwend
 
+run-release:
+  cargo run --release --bin haemwend
+
 run-hot:
   ./scripts/dev_game.sh
 

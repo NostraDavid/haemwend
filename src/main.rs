@@ -11,7 +11,7 @@ fn main() {
             primary_window: Some(Window {
                 title: "haemwend".into(),
                 resolution: WindowResolution::new(1920, 1080),
-                present_mode: PresentMode::AutoNoVsync,
+                present_mode: PresentMode::Immediate,
                 ..default()
             }),
             ..default()
