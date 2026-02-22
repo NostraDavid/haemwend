@@ -1,0 +1,517 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="3749pt" height="1438pt" viewBox="0 0 3749 1438"><g class="graph"><path fill="#0d1117" d="M0 1438V0h3749v1438z"/><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(0)</title><a xlink:title="Update">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M1438-8h174c6 0 12-6 12-12v-661c0-6-6-12-12-12h-174c-6 0-12 6-12 12v661c0 6 6 12 12 12"/>
+<text x="1525" y="-677.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">Update</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(2)</title><a xlink:title="FirstFlush">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M182-692h141c6 0 12-6 12-12v-62c0-6-6-12-12-12H182c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="252.5" y="-762.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">FirstFlush</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(3)</title><a xlink:title="PreUpdateFlush">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M632-607h141c6 0 12-6 12-12v-62c0-6-6-12-12-12H632c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="702.5" y="-677.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">PreUpdateFlush</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(4)</title><a xlink:title="UpdateFlush">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M1657-607h141c6 0 12-6 12-12v-62c0-6-6-12-12-12h-141c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="1727.5" y="-677.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">UpdateFlush</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(5)</title><a xlink:title="PostUpdateFlush">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2159-501h141c6 0 12-6 12-12v-62c0-6-6-12-12-12h-141c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="2229.5" y="-571.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">PostUpdateFlush</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(6)</title><a xlink:title="LastFlush">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2862.5-231h141c6 0 12-6 12-12v-62c0-6-6-12-12-12h-141c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="2933" y="-301.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">LastFlush</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(7)</title><a xlink:title="First">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M20-701h102c6 0 12-6 12-12v-109c0-6-6-12-12-12H20c-6 0-12 6-12 12v109c0 6 6 12 12 12"/>
+<text x="71" y="-818.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">First</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(16)</title><a xlink:title="TimeSystem">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M28-717h86c6 0 12-6 12-12v-62c0-6-6-12-12-12H28c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="71" y="-787.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">TimeSystem</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(8)</title><a xlink:title="PreUpdate">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M385-701h898c6 0 12-6 12-12v-336c0-6-6-12-12-12H385c-6 0-12 6-12 12v336c0 6 6 12 12 12"/>
+<text x="834" y="-1045.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">PreUpdate</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(25)</title><a xlink:title="InputSystem">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M611-709h664c6 0 12-6 12-12v-203c0-6-6-12-12-12H611c-6 0-12 6-12 12v203c0 6 6 12 12 12"/>
+<text x="943" y="-920.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">InputSystem</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(121)</title><a xlink:title="Focus">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M878.5-944h110c6 0 12-6 12-12v-62c0-6-6-12-12-12h-110c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="933.5" y="-1014.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">Focus</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(9)</title><a xlink:title="StateTransitions">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M888.5-654h90c6 0 12-6 12-12v-15c0-6-6-12-12-12h-90c-6 0-12 6-12 12v15c0 6 6 12 12 12"/>
+<text x="933.5" y="-677.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">StateTransitions</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(10)</title><a xlink:title="FixedUpdate">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M1087-607h174c6 0 12-6 12-12v-62c0-6-6-12-12-12h-174c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="1174" y="-677.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">FixedUpdate</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(11)</title><a xlink:title="PostUpdate">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M1843-607h1878c6 0 12-6 12-12v-791c0-6-6-12-12-12H1843c-6 0-12 6-12 12v791c0 6 6 12 12 12"/>
+<text x="2782" y="-1406.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">PostUpdate</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(20)</title><a xlink:title="TransformPropagate">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2475.5-914h160c6 0 12-6 12-12v-156c0-6-6-12-12-12h-160c-6 0-12 6-12 12v156c0 6 6 12 12 12"/>
+<text x="2555.5" y="-1078.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">TransformPropagate</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(21)</title><a xlink:title="PropagateTransformsSet">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2483.5-977h144c6 0 12-6 12-12v-62c0-6-6-12-12-12h-144c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="2555.5" y="-1047.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">PropagateTransformsSet</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(82)</title><a xlink:title="CameraUpdateSystem">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2424.5-718h261c6 0 12-6 12-12v-156c0-6-6-12-12-12h-261c-6 0-12 6-12 12v156c0 6 6 12 12 12"/>
+<text x="2555" y="-882.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">CameraUpdateSystem</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(86)</title><a xlink:title="CalculateBounds">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2498-1305h114c6 0 12-6 12-12v-62c0-6-6-12-12-12h-114c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="2555" y="-1375.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">CalculateBounds</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(87)</title><a xlink:title="CalculateBoundsFlush">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2862.5-1305h141c6 0 12-6 12-12v-62c0-6-6-12-12-12h-141c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="2933" y="-1375.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">CalculateBoundsFlush</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(88)</title><a xlink:title="UpdateOrthographicFrusta">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2810-943h246c6 0 12-6 12-12v-62c0-6-6-12-12-12h-246c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="2933" y="-1013.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">UpdateOrthographicFrusta</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(89)</title><a xlink:title="UpdatePerspectiveFrusta">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2814-1037h238c6 0 12-6 12-12v-62c0-6-6-12-12-12h-238c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="2933" y="-1107.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">UpdatePerspectiveFrusta</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(90)</title><a xlink:title="UpdateProjectionFrusta">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2849-849h168c6 0 12-6 12-12v-62c0-6-6-12-12-12h-168c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="2933" y="-919.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">UpdateProjectionFrusta</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(91)</title><a xlink:title="CheckVisibility">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M3131.5-1066h98c6 0 12-6 12-12v-62c0-6-6-12-12-12h-98c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="3180.5" y="-1136.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">CheckVisibility</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(92)</title><a xlink:title="VisibilityPropagate">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2846-1141h174c6 0 12-6 12-12v-62c0-6-6-12-12-12h-174c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="2933" y="-1211.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">VisibilityPropagate</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(122)</title><a xlink:title="Flex">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2170.5-978h118c6 0 12-6 12-12v-62c0-6-6-12-12-12h-118c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="2229.5" y="-1048.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">Flex</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(123)</title><a xlink:title="Stack">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M1924-1172h109c6 0 12-6 12-12v-62c0-6-6-12-12-12h-109c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="1978.5" y="-1242.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">Stack</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(137)</title><a xlink:title="AddClusters">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2512.5-615h85c6 0 12-6 12-12v-62c0-6-6-12-12-12h-85c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="2555" y="-685.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">AddClusters</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(138)</title><a xlink:title="AddClustersFlush">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2862.5-615h141c6 0 12-6 12-12v-62c0-6-6-12-12-12h-141c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="2933" y="-685.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">AddClustersFlush</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(139)</title><a xlink:title="AssignLightsToClusters">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M3101-703h159c6 0 12-6 12-12v-62c0-6-6-12-12-12h-159c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="3180.5" y="-773.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">AssignLightsToClusters</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(140)</title><a xlink:title="CheckLightVisibility">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M3542-1254h171c6 0 12-6 12-12v-62c0-6-6-12-12-12h-171c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="3627.5" y="-1324.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">CheckLightVisibility</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(141)</title><a xlink:title="UpdateDirectionalLightCascades">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2825-732h216c6 0 12-6 12-12v-62c0-6-6-12-12-12h-216c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="2933" y="-802.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">UpdateDirectionalLightCascades</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(142)</title><a xlink:title="UpdateLightFrusta">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M3305-784h192c6 0 12-6 12-12v-156c0-6-6-12-12-12h-192c-6 0-12 6-12 12v156c0 6 6 12 12 12"/>
+<text x="3401" y="-948.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">UpdateLightFrusta</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(12)</title><a xlink:title="Last">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2345-325h645.5c6 0 12-6 12-12v-250c0-6-6-12-12-12H2345c-6 0-12 6-12 12v250c0 6 6 12 12 12"/>
+<text x="2667.75" y="-583.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">Last</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(59)</title><a xlink:title="LoadAssets">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M165-598h175c6 0 12-6 12-12v-62c0-6-6-12-12-12H165c-6 0-12 6-12 12v62c0 6 6 12 12 12"/>
+<text x="252.5" y="-668.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">LoadAssets</text>
+</a></g><g class="cluster" transform="translate(4 1434)"><title>clusternode_Set(60)</title><a xlink:title="AssetEvents">
+<path fill="#fff" fill-opacity=".27" stroke="#fff" stroke-opacity=".31" stroke-width="2" d="M2195.5-407h68c6 0 12-6 12-12v-15c0-6-6-12-12-12h-68c-6 0-12 6-12 12v15c0 6 6 12 12 12"/>
+<text x="2229.5" y="-430.8" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">AssetEvents</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(0)-&gt;set_marker_node_Set(4)</title><a xlink:title="Update → UpdateFlush">
+<path fill="none" stroke="#ee9e44" stroke-width="2" d="M1624-662h8.24"/>
+<path fill="#ee9e44" stroke="#ee9e44" stroke-width="2" d="m1631.98-665.5 10 3.5-10 3.5z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(46)</title><a xlink:title="bevy_window::system::close_when_requested">
+<path fill="#bb85d4" stroke="#8e3fb3" d="M1602.5-651h-155v36h155z"/>
+<text x="1525" y="-629.3" fill="#2c1338" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">close_when_requested</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(55)</title><a xlink:title="bevy_scene::scene_spawner::scene_spawner_system">
+<path fill="#bacfcb" stroke="#7da59d" d="M1606-604h-162v36h162z"/>
+<text x="1525" y="-582.3" fill="#1f2d2a" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">scene_spawner_system</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(60)</title><a xlink:title="bevy_winit::accessibility::handle_window_focus">
+<path fill="#664f72" stroke="#9980a6" d="M1599.5-557h-149v36h149z"/>
+<text x="1525" y="-535.3" fill="#dad1df" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">handle_window_focus</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(61)</title><a xlink:title="bevy_winit::accessibility::window_closed">
+<path fill="#664f72" stroke="#9980a6" d="M1579-487h-108v36h108z"/>
+<text x="1525" y="-465.3" fill="#dad1df" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">window_closed</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(60)-&gt;node_System(61)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M1525-520.97v33.58"/><a xlink:title="handle_window_focus — window_closed">
+<path fill="#c6e6ff" d="M1456.5-494v-19h109v19z"/>
+<text x="1458.5" y="-499.8" fill="#c93526" font-family="Times,serif" font-size="14">AccessKitAdapters</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(62)</title><a xlink:title="bevy_winit::accessibility::poll_receivers">
+<path fill="#664f72" stroke="#9980a6" d="M1575-417h-100v36h100z"/>
+<text x="1525" y="-395.3" fill="#dad1df" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">poll_receivers</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(61)-&gt;node_System(62)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M1525-450.97v33.58"/><a xlink:title="window_closed — poll_receivers">
+<path fill="#c6e6ff" d="M1450.5-424v-19h121v19z"/>
+<text x="1452.5" y="-429.8" fill="#c93526" font-family="Times,serif" font-size="14">WinitActionHandlers</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(63)</title><a xlink:title="bevy_winit::accessibility::update_accessibility_nodes">
+<path fill="#664f72" stroke="#9980a6" d="M1616-370h-182v36h182z"/>
+<text x="1525" y="-348.3" fill="#dad1df" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">update_accessibility_nodes</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(61)-&gt;node_System(63)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M1470.54-472.71c-45.28.23-107.39 8.93-139.96 50.21-33.08 41.93 37.92 58.93 103.22 65.82"/><a xlink:title="window_closed — update_accessibility_nodes">
+<path fill="#c6e6ff" d="M1305.5-401v-19h109v19z"/>
+<text x="1307.5" y="-406.8" fill="#c93526" font-family="Times,serif" font-size="14">AccessKitAdapters</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(102)</title><a xlink:title="bevy_ui::accessibility::calc_bounds">
+<path fill="#ffb1e5" stroke="#ff4bc2" d="M1571-300h-92v36h92z"/>
+<text x="1525" y="-278.3" fill="#4c0032" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">calc_bounds</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(63)-&gt;node_System(102)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M1525-333.97v33.58"/><a xlink:title="update_accessibility_nodes — calc_bounds">
+<path fill="#c6e6ff" d="M1458.5-307v-19h104v19z"/>
+<text x="1460.5" y="-312.8" fill="#c93526" font-family="Times,serif" font-size="14">AccessibilityNode</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(103)</title><a xlink:title="bevy_ui::accessibility::button_changed">
+<path fill="#ffb1e5" stroke="#ff4bc2" d="M1581.5-230h-113v36h113z"/>
+<text x="1525" y="-208.3" fill="#4c0032" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">button_changed</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(63)-&gt;node_System(103)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M1433.78-359.62c-36.9 2.18-76.43 12.25-100.7 41.12-43.21 51.41 64.05 82.51 135.07 96.9"/><a xlink:title="update_accessibility_nodes — button_changed">
+<path fill="#c6e6ff" d="M1307.5-297v-19h104v19z"/>
+<text x="1309.5" y="-302.8" fill="#c93526" font-family="Times,serif" font-size="14">AccessibilityNode</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(104)</title><a xlink:title="bevy_ui::accessibility::image_changed">
+<path fill="#ffb1e5" stroke="#ff4bc2" d="M1581.5-122h-113v36h113z"/>
+<text x="1525" y="-100.3" fill="#4c0032" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">image_changed</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(63)-&gt;node_System(104)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M1433.92-343.81c-37.59 8.4-77.69 24.95-100.84 57.31-49.42 69.09 72.45 133.51 144.11 164.01"/><a xlink:title="update_accessibility_nodes — image_changed">
+<path fill="#c6e6ff" d="M1307.5-265v-19h104v19z"/>
+<text x="1309.5" y="-270.8" fill="#c93526" font-family="Times,serif" font-size="14">AccessibilityNode</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(105)</title><a xlink:title="bevy_ui::accessibility::label_changed">
+<path fill="#ffb1e5" stroke="#ff4bc2" d="M1577-52h-104v36h104z"/>
+<text x="1525" y="-30.3" fill="#4c0032" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">label_changed</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(63)-&gt;node_System(105)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M1471.97-333.6c-47.59 19.88-113.7 56.79-138.89 115.1-33.17 76.8 76.51 137.23 143.61 166.05"/><a xlink:title="update_accessibility_nodes — label_changed">
+<path fill="#c6e6ff" d="M1307.5-197v-19h104v19z"/>
+<text x="1309.5" y="-202.8" fill="#c93526" font-family="Times,serif" font-size="14">AccessibilityNode</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(102)-&gt;node_System(103)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M1525-263.97v33.58"/><a xlink:title="calc_bounds — button_changed">
+<path fill="#c6e6ff" d="M1458.5-237v-19h104v19z"/>
+<text x="1460.5" y="-242.8" fill="#c93526" font-family="Times,serif" font-size="14">AccessibilityNode</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(102)-&gt;node_System(104)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M1478.58-268.02c-71.91 23.93-196.87 75.95-145.5 135.52 32.45 37.62 91.22 41.35 135.21 37.76"/><a xlink:title="calc_bounds — image_changed">
+<path fill="#c6e6ff" d="M1307.5-134v-19h104v19z"/>
+<text x="1309.5" y="-139.8" fill="#c93526" font-family="Times,serif" font-size="14">AccessibilityNode</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(102)-&gt;node_System(105)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M1478.58-289.18c-44.77-3.98-110.71-1.49-145.5 39.68-55.44 65.62 28.35 112.83 92.92 169.5 13.46 11.81 30.47 21.17 46.58 28.28"/><a xlink:title="calc_bounds — label_changed">
+<path fill="#c6e6ff" d="M1307.5-228v-19h104v19z"/>
+<text x="1309.5" y="-233.8" fill="#c93526" font-family="Times,serif" font-size="14">AccessibilityNode</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(103)-&gt;node_System(104)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M1525-193.59v71.27"/><a xlink:title="button_changed — image_changed">
+<path fill="#c6e6ff" d="M1458.5-148v-19h104v19z"/>
+<text x="1460.5" y="-153.8" fill="#c93526" font-family="Times,serif" font-size="14">AccessibilityNode</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(103)-&gt;node_System(105)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M1468.29-221.26c-43.99-3.59-102.76.14-135.21 37.76-49.99 57.97 67.01 108.79 139.6 133.53"/><a xlink:title="button_changed — label_changed">
+<path fill="#c6e6ff" d="M1307.5-162v-19h104v19z"/>
+<text x="1309.5" y="-167.8" fill="#c93526" font-family="Times,serif" font-size="14">AccessibilityNode</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(104)-&gt;node_System(105)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M1525-85.97v33.58"/><a xlink:title="image_changed — label_changed">
+<path fill="#c6e6ff" d="M1458.5-59v-19h104v19z"/>
+<text x="1460.5" y="-64.8" fill="#c93526" font-family="Times,serif" font-size="14">AccessibilityNode</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(2)-&gt;set_marker_node_Set(8)</title><a xlink:title="FirstFlush → PreUpdate">
+<path fill="none" stroke="#881877" stroke-width="2" d="M335-744.87c5.78.77 11.49 1.71 17 2.87 4.12.87 6.81 1.9 9.25 3.02"/>
+<path fill="#881877" stroke="#881877" stroke-width="2" d="m362.37-742.31 7.84 7.13-10.57-.68z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(0)</title><a xlink:title="bevy_ecs::schedule::executor::apply_system_buffers">
+<path fill="#e70000" stroke="#5a0000" stroke-width="2" d="M327-736H178v36h149z"/>
+<text x="252.5" y="-714.3" fill="#fff" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">apply_system_buffers</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(3)-&gt;set_marker_node_Set(9)</title><a xlink:title="PreUpdateFlush → StateTransitions">
+<path fill="none" stroke="#aa3a55" stroke-width="2" d="M785-662h78.7"/>
+<path fill="#aa3a55" stroke="#aa3a55" stroke-width="2" d="m863.47-665.5 10 3.5-10 3.5z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(1)</title><a xlink:title="bevy_ecs::schedule::executor::apply_system_buffers">
+<path fill="#e70000" stroke="#5a0000" stroke-width="2" d="M777-651H628v36h149z"/>
+<text x="702.5" y="-629.3" fill="#fff" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">apply_system_buffers</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(4)-&gt;set_marker_node_Set(11)</title><a xlink:title="UpdateFlush → PostUpdate">
+<path fill="none" stroke="#663699" stroke-width="2" d="M1810-662h8.06"/>
+<path fill="#663699" stroke="#663699" stroke-width="2" d="m1817.98-665.5 10 3.5-10 3.5z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(2)</title><a xlink:title="bevy_ecs::schedule::executor::apply_system_buffers">
+<path fill="#e70000" stroke="#5a0000" stroke-width="2" d="M1802-651h-149v36h149z"/>
+<text x="1727.5" y="-629.3" fill="#fff" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">apply_system_buffers</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(5)-&gt;set_marker_node_Set(12)</title><a xlink:title="PostUpdateFlush → Last">
+<path fill="none" stroke="#22c2bb" stroke-width="2" d="M2312-551c50.58 47.38-23.39 107.34 12.33 155.53"/>
+<path fill="#22c2bb" stroke="#22c2bb" stroke-width="2" d="m2326.78-397.97 4.18 9.74-9.34-5.01z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(3)</title><a xlink:title="bevy_ecs::schedule::executor::apply_system_buffers">
+<path fill="#e70000" stroke="#5a0000" stroke-width="2" d="M2304-545h-149v36h149z"/>
+<text x="2229.5" y="-523.3" fill="#fff" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">apply_system_buffers</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(4)</title><a xlink:title="bevy_ecs::schedule::executor::apply_system_buffers">
+<path fill="#e70000" stroke="#5a0000" stroke-width="2" d="M3007.5-275h-149v36h149z"/>
+<text x="2933" y="-253.3" fill="#fff" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">apply_system_buffers</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(7)-&gt;set_marker_node_Set(2)</title><a xlink:title="First → FirstFlush">
+<path fill="none" stroke="#eede00" stroke-width="2" d="M134-715c12.68-7.38 6.15-19.91 19-27q2.37-1.3 4.85-2.43"/>
+<path fill="#eede00" stroke="#eede00" stroke-width="2" d="m156.56-747.69 10.6-.08-8.23 6.67z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(7)-&gt;set_marker_node_Set(59)</title><a xlink:title="First → LoadAssets">
+<path fill="none" stroke="#ee9e44" stroke-width="2" d="m97.63-701 43.18 13.47"/>
+<path fill="#ee9e44" stroke="#ee9e44" stroke-width="2" d="m141.61-690.95 8.5 6.32-10.59.36z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(8)</title><a xlink:title="bevy_time::time_system">
+<path fill="#c7ddbd" stroke="#8dba79" d="M118-761H24v36h94z"/>
+<text x="71" y="-739.3" fill="#21321a" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">time_system</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(8)-&gt;set_marker_node_Set(3)</title><a xlink:title="PreUpdate → PreUpdateFlush">
+<path fill="none" stroke="#00b0cc" stroke-width="2" d="m514.8-701 92.55 19.33"/>
+<path fill="#00b0cc" stroke="#00b0cc" stroke-width="2" d="m607.97-685.11 9.07 5.47-10.5 1.38z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(100)</title><a xlink:title="bevy_ui::focus::ui_focus_system">
+<path fill="#ffb1e5" stroke="#ff4bc2" d="M992.5-988h-118v36h118z"/>
+<text x="933.5" y="-966.3" fill="#4c0032" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">ui_focus_system</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(25)-&gt;node_System(100)</title><a xlink:title="InputSystem → ui_focus_system">
+<path fill="none" stroke="#881877" stroke-width="2" d="m812.7-936 49.15-13.95"/>
+<path fill="#881877" stroke="#881877" stroke-width="2" d="m860.74-953.27 10.58.64-8.67 6.09z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(15)</title><a xlink:title="bevy_input::keyboard::keyboard_input_system">
+<path fill="#d36aaf" stroke="#a5317d" d="M782.5-894h-160v36h160z"/>
+<text x="702.5" y="-872.3" fill="#3b112c" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">keyboard_input_system</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(19)</title><a xlink:title="bevy_input::mouse::mouse_button_input_system">
+<path fill="#d36aaf" stroke="#a5317d" d="M798-847H607v36h191z"/>
+<text x="702.5" y="-825.3" fill="#3b112c" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">mouse_button_input_system</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(24)</title><a xlink:title="bevy_input::gamepad::gamepad_event_system">
+<path fill="#d36aaf" stroke="#a5317d" d="M785-800H620v36h165z"/>
+<text x="702.5" y="-778.3" fill="#3b112c" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">gamepad_event_system</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(25)</title><a xlink:title="bevy_input::gamepad::gamepad_connection_system">
+<path fill="#d36aaf" stroke="#a5317d" d="M1032-800H835v36h197z"/>
+<text x="933.5" y="-778.3" fill="#3b112c" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">gamepad_connection_system</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(24)-&gt;node_System(25)</title><a xlink:title="SystemTypeSet(gamepad_event_system&quot;) → gamepad_connection_system">
+<path fill="none" stroke="#eede00" stroke-width="2" d="M785.2-782h36.73"/>
+<path fill="#eede00" stroke="#eede00" stroke-width="2" d="m821.75-785.5 10 3.5-10 3.5z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(26)</title><a xlink:title="bevy_input::gamepad::gamepad_button_event_system">
+<path fill="#d36aaf" stroke="#a5317d" d="M1279-826h-210v36h210z"/>
+<text x="1174" y="-804.3" fill="#3b112c" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">gamepad_button_event_system</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(24)-&gt;node_System(26)</title><a xlink:title="SystemTypeSet(gamepad_event_system&quot;) → gamepad_button_event_system">
+<path fill="none" stroke="#881877" stroke-width="2" d="M785.27-799.2A668 668 0 0 1 835-806c73.26-6.85 155.85-7.47 221.04-6.32"/>
+<path fill="#881877" stroke="#881877" stroke-width="2" d="m1055.89-815.82 9.93 3.69-10.07 3.31z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(27)</title><a xlink:title="bevy_input::gamepad::gamepad_axis_event_system">
+<path fill="#d36aaf" stroke="#a5317d" d="M1272.5-776h-197v36h197z"/>
+<text x="1174" y="-754.3" fill="#3b112c" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">gamepad_axis_event_system</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(24)-&gt;node_System(27)</title><a xlink:title="SystemTypeSet(gamepad_event_system&quot;) → gamepad_axis_event_system">
+<path fill="none" stroke="#aa3a55" stroke-width="2" d="M785.29-765.48A687 687 0 0 0 835-759c75.62 6.68 161.14 6.86 227.23 5.41"/>
+<path fill="#aa3a55" stroke="#aa3a55" stroke-width="2" d="m1062.07-757.09 10.08 3.26-9.91 3.74z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(25)-&gt;node_System(26)</title><a xlink:title="SystemTypeSet(gamepad_connection_system&quot;) → gamepad_button_event_system">
+<path fill="none" stroke="#00b0cc" stroke-width="2" d="m1032.2-792.65 23.76-2.59"/>
+<path fill="#00b0cc" stroke="#00b0cc" stroke-width="2" d="m1055.54-798.72 10.32 2.4-9.56 4.56z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(25)-&gt;node_System(27)</title><a xlink:title="SystemTypeSet(gamepad_connection_system&quot;) → gamepad_axis_event_system">
+<path fill="none" stroke="#44d488" stroke-width="2" d="m1032.2-772.17 30.18 3.04"/>
+<path fill="#44d488" stroke="#44d488" stroke-width="2" d="m1062.46-772.64 9.6 4.48-10.3 2.48z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(29)</title><a xlink:title="bevy_input::touch::touch_screen_input_system">
+<path fill="#d36aaf" stroke="#a5317d" d="M795-753H610v36h185z"/>
+<text x="702.5" y="-731.3" fill="#3b112c" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">touch_screen_input_system</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(47)</title><a xlink:title="bevy_asset::asset_server::free_unused_assets_system">
+<path fill="#d1cbc5" stroke="#a3978c" d="M570-858H381v36h189z"/>
+<text x="475.5" y="-836.3" fill="#2a2621" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">free_unused_assets_system</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(56)</title><a xlink:title="bevy_scene::bundle::scene_spawner">
+<path fill="#bacfcb" stroke="#7da59d" d="M531-775H420v36h111z"/>
+<text x="475.5" y="-753.3" fill="#1f2d2a" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">scene_spawner</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(143)</title><a xlink:title="bevy_gilrs::gilrs_system::gilrs_event_system">
+<path fill="#973977" stroke="#c86da9" d="M542-923H409v36h133z"/>
+<text x="475.5" y="-901.3" fill="#eac7de" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">gilrs_event_system</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(143)-&gt;set_marker_node_Set(25)</title><a xlink:title="gilrs_event_system → InputSystem">
+<path fill="none" stroke="#00b0cc" stroke-width="2" d="M542.49-905h43.88"/>
+<path fill="#00b0cc" stroke="#00b0cc" stroke-width="2" d="m585.98-908.5 10 3.5-10 3.5z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(9)-&gt;set_marker_node_Set(10)</title><a xlink:title="StateTransitions → FixedUpdate">
+<path fill="none" stroke="#44d488" stroke-width="2" d="M990.5-662h71.49"/>
+<path fill="#44d488" stroke="#44d488" stroke-width="2" d="m1061.98-665.5 10 3.5-10 3.5z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(10)-&gt;set_marker_node_Set(0)</title><a xlink:title="FixedUpdate → Update">
+<path fill="none" stroke="#0090cc" stroke-width="2" d="M1273-662h140.24"/>
+<path fill="#0090cc" stroke="#0090cc" stroke-width="2" d="m1412.97-665.5 10 3.5-10 3.5z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(9)</title><a xlink:title="bevy_time::fixed_timestep::run_fixed_update_schedule">
+<path fill="#c7ddbd" stroke="#8dba79" d="M1265-651h-182v36h182z"/>
+<text x="1174" y="-629.3" fill="#21321a" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">run_fixed_update_schedule</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(11)-&gt;set_marker_node_Set(5)</title><a xlink:title="PostUpdate → PostUpdateFlush">
+<path fill="none" stroke="#3363bb" stroke-width="2" d="M2145.17-607q.86 1 1.83 2a129 129 0 0 0 11.27 10.28"/>
+<path fill="#3363bb" stroke="#3363bb" stroke-width="2" d="m2160.22-597.63 5.88 8.81-10.09-3.22z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(11)-&gt;set_marker_node_Set(60)</title><a xlink:title="PostUpdate → AssetEvents">
+<path fill="none" stroke="#663699" stroke-width="2" d="M2134.54-607c4.08 38.96 2.07 87.84 12.46 108 8.32 16.14 20.76 31.25 33.44 44.08"/>
+<path fill="#663699" stroke="#663699" stroke-width="2" d="m2182.73-457.58 4.75 9.48-9.62-4.45z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(73)</title><a xlink:title="bevy_render::view::visibility::update_frusta&lt;bevy_render::camera::projection::OrthographicProjection&gt;">
+<path fill="#70b9fc" stroke="#0c88f9" d="M3060-987h-254v36h254z"/>
+<text x="2933" y="-965.3" fill="#01274a" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">update_frusta&lt;OrthographicProjection&gt;</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(20)-&gt;node_System(73)</title><a xlink:title="TransformPropagate → update_frusta&lt;OrthographicProjection&gt;">
+<path fill="none" stroke="#881877" stroke-width="2" d="M2647.5-969h145.3"/>
+<path fill="#881877" stroke="#881877" stroke-width="2" d="m2792.53-972.5 10 3.5-10 3.5z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(74)</title><a xlink:title="bevy_render::view::visibility::update_frusta&lt;bevy_render::camera::projection::PerspectiveProjection&gt;">
+<path fill="#70b9fc" stroke="#0c88f9" d="M3056-1081h-246v36h246z"/>
+<text x="2933" y="-1059.3" fill="#01274a" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">update_frusta&lt;PerspectiveProjection&gt;</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(20)-&gt;node_System(74)</title><a xlink:title="TransformPropagate → update_frusta&lt;PerspectiveProjection&gt;">
+<path fill="none" stroke="#aa3a55" stroke-width="2" d="M2647.5-966.99c53.01.36 111.27-.93 121.5-8.01 23.05-15.95 4.84-41.79 29-56a162 162 0 0 1 17.6-8.89"/>
+<path fill="#aa3a55" stroke="#aa3a55" stroke-width="2" d="m2814.13-1043.07 10.58-.43-8.01 6.94z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(75)</title><a xlink:title="bevy_render::view::visibility::update_frusta&lt;bevy_render::camera::projection::Projection&gt;">
+<path fill="#70b9fc" stroke="#0c88f9" d="M3021-893h-176v36h176z"/>
+<text x="2933" y="-871.3" fill="#01274a" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">update_frusta&lt;Projection&gt;</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(20)-&gt;node_System(75)</title><a xlink:title="TransformPropagate → update_frusta&lt;Projection&gt;">
+<path fill="none" stroke="#0090cc" stroke-width="2" d="M2647.5-971.35c52.95-.57 111.15.46 121.5 7.35 26.33 17.53 4.09 45.5 29 65 10.05 7.87 21.82 13.48 34.14 17.45"/>
+<path fill="#0090cc" stroke="#0090cc" stroke-width="2" d="m2832.97-884.95 8.71 6.03-10.57.71z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(77)</title><a xlink:title="bevy_render::view::visibility::check_visibility">
+<path fill="#70b9fc" stroke="#0c88f9" d="M3233.5-1110h-106v36h106z"/>
+<text x="3180.5" y="-1088.3" fill="#01274a" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">check_visibility</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(20)-&gt;node_System(77)</title><a xlink:title="TransformPropagate → check_visibility">
+<path fill="none" stroke="#eede00" stroke-width="2" d="M2647.5-966.34c53.35.65 111.99-.58 121.5-8.66 25.88-21.98 2.81-128.39 29-150 23.14-19.09 240.61-6.03 270 0 9.95 2.04 11.4 5.69 21 9a527 527 0 0 0 26.06 8.15"/>
+<path fill="#eede00" stroke="#eede00" stroke-width="2" d="m3115.8-1111.28 8.7 6.05-10.57.7z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(115)</title><a xlink:title="bevy_pbr::light::assign_lights_to_clusters">
+<path fill="#abd5fc" stroke="#48a3f8" d="M3264-758h-167v36h167z"/>
+<text x="3180.5" y="-736.3" fill="#022749" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">assign_lights_to_clusters</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(20)-&gt;node_System(115)</title><a xlink:title="TransformPropagate → assign_lights_to_clusters">
+<path fill="none" stroke="#3363bb" stroke-width="2" d="M2647.5-972.36c53.49-1.01 112.3-.09 121.5 8.36 38.61 35.43-10.82 199.95 29 234 21.21 18.14 179.73 8.07 285.64-.93"/>
+<path fill="#3363bb" stroke="#3363bb" stroke-width="2" d="m3083.33-734.42 10.26 2.63-9.66 4.35z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(120)</title><a xlink:title="bevy_pbr::light::check_light_mesh_visibility">
+<path fill="#abd5fc" stroke="#48a3f8" d="M3717-1298h-179v36h179z"/>
+<text x="3627.5" y="-1276.3" fill="#022749" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">check_light_mesh_visibility</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(20)-&gt;node_System(120)</title><a xlink:title="TransformPropagate → check_light_mesh_visibility">
+<path fill="none" stroke="#99d955" stroke-width="2" d="M2647.5-965.93c53.6.83 112.53-.35 121.5-9.07 50.44-49.02-32.29-266.83 18-316 23.05-22.54 112.76-5 145-5h470c40.2 0 84.34 2.58 122.77 5.67"/>
+<path fill="#99d955" stroke="#99d955" stroke-width="2" d="m3524.87-1293.83 9.68 4.32-10.26 2.66z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(116)</title><a xlink:title="bevy_pbr::light::update_directional_light_cascades">
+<path fill="#abd5fc" stroke="#48a3f8" d="M3045-776h-224v36h224z"/>
+<text x="2933" y="-754.3" fill="#022749" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">update_directional_light_cascades</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(20)-&gt;node_System(116)</title><a xlink:title="TransformPropagate → update_directional_light_cascades">
+<path fill="none" stroke="#eede00" stroke-width="2" d="M2647.5-972.3c53.46-.99 112.22-.06 121.5 8.3 30.43 27.41-1.08 154.21 29 182a80 80 0 0 0 11.45 8.77"/>
+<path fill="#eede00" stroke="#eede00" stroke-width="2" d="m2810.87-776.44 7.12 7.84-10.46-1.69z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(117)</title><a xlink:title="bevy_pbr::light::update_directional_light_frusta">
+<path fill="#abd5fc" stroke="#48a3f8" d="M3501-922h-200v36h200z"/>
+<text x="3401" y="-900.3" fill="#022749" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">update_directional_light_frusta</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(20)-&gt;node_System(117)</title><a xlink:title="TransformPropagate → update_directional_light_frusta">
+<path fill="none" stroke="#aa3a55" stroke-width="2" d="M2647.5-966.1c53.49.75 112.3-.45 121.5-8.9 41.85-38.42-13.39-216.18 29-254 22.38-19.97 240.46-5.26 270 0 95.11 16.93 145.11-1.57 204 75 6.85 8.9 11.55 173.7 23.91 221.54"/>
+<path fill="#aa3a55" stroke="#aa3a55" stroke-width="2" d="m3299.05-934.01.61 10.58-7.07-7.89z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(118)</title><a xlink:title="bevy_pbr::light::update_point_light_frusta">
+<path fill="#abd5fc" stroke="#48a3f8" d="M3485-828h-168v36h168z"/>
+<text x="3401" y="-806.3" fill="#022749" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">update_point_light_frusta</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(20)-&gt;node_System(118)</title><a xlink:title="TransformPropagate → update_point_light_frusta">
+<path fill="none" stroke="#0090cc" stroke-width="2" d="M2647.5-972.19c53.39-.94 112.08 0 121.5 8.19 45.34 39.39-21.22 99.05 29 132 5.21 3.42 336.99 13.96 505.7 19.11"/>
+<path fill="#0090cc" stroke="#0090cc" stroke-width="2" d="m3303.64-816.39 9.88 3.8-10.1 3.19z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(119)</title><a xlink:title="bevy_pbr::light::update_spot_light_frusta">
+<path fill="#abd5fc" stroke="#48a3f8" d="M3483-875h-164v36h164z"/>
+<text x="3401" y="-853.3" fill="#022749" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">update_spot_light_frusta</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(20)-&gt;node_System(119)</title><a xlink:title="TransformPropagate → update_spot_light_frusta">
+<path fill="none" stroke="#663699" stroke-width="2" d="M2647.5-971.94c53.24-.83 111.77.14 121.5 7.94 41.8 33.51-13.19 83.99 29 117 38.92 30.45 348.91 10.45 508.2-2.08"/>
+<path fill="#663699" stroke="#663699" stroke-width="2" d="m3305.53-852.53 10.25 2.69-9.69 4.28z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(109)</title><a xlink:title="bevy_ui::update::update_clipping_system">
+<path fill="#ffb1e5" stroke="#ff4bc2" d="M3014-1284h-162v36h162z"/>
+<text x="2933" y="-1262.3" fill="#4c0032" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">update_clipping_system</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(20)-&gt;node_System(109)</title><a xlink:title="TransformPropagate → update_clipping_system">
+<path fill="none" stroke="#0090cc" stroke-width="2" d="M2647.5-965.96c53.58.81 112.48-.38 121.5-9.04 42.4-40.74-21.1-220.08 18-264 13.4-15.05 32.27-23.4 51.98-27.75"/>
+<path fill="#0090cc" stroke="#0090cc" stroke-width="2" d="m2838.22-1270.17 10.45 1.69-9.23 5.2z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(12)</title><a xlink:title="bevy_transform::systems::propagate_transforms">
+<path fill="#ffe7b9" stroke="#ffc453" d="M2629.5-1021h-149v36h149z"/>
+<text x="2555" y="-999.3" fill="#4c3200" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">propagate_transforms</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(11)</title><a xlink:title="bevy_transform::systems::sync_simple_transforms">
+<path fill="#ffe7b9" stroke="#ffc453" d="M2637-958h-164v36h164z"/>
+<text x="2555" y="-936.3" fill="#4c3200" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">sync_simple_transforms</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(82)-&gt;node_System(115)</title><a xlink:title="CameraUpdateSystem → assign_lights_to_clusters">
+<path fill="none" stroke="#99d955" stroke-width="2" d="M2661.98-718c105.87 6.4 273.11 12.18 417.02-2q2.43-.24 4.89-.52"/>
+<path fill="#99d955" stroke="#99d955" stroke-width="2" d="m3083.23-723.96 10.37 2.17-9.46 4.77z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(82)-&gt;node_System(116)</title><a xlink:title="CameraUpdateSystem → update_directional_light_cascades">
+<path fill="none" stroke="#881877" stroke-width="2" d="M2697.5-727.41c23.89-.97 48.43-2.43 71.5-4.59 15.42-1.44 31.6-3.43 47.52-5.68"/>
+<path fill="#881877" stroke="#881877" stroke-width="2" d="m2815.82-741.11 10.4 2.02-9.39 4.9z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(68)</title><a xlink:title="bevy_render::camera::camera::camera_system&lt;bevy_render::camera::projection::Projection&gt;">
+<path fill="#70b9fc" stroke="#0c88f9" d="M2650-773h-190v36h190z"/>
+<text x="2555" y="-751.3" fill="#01274a" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">camera_system&lt;Projection&gt;</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(68)-&gt;node_System(75)</title><a xlink:title="SystemTypeSet(camera_system&lt;Projection&gt;&quot;) → update_frusta&lt;Projection&gt;">
+<path fill="none" stroke="#44d488" stroke-width="2" d="M2650.25-745.27c54.97 3.48 117.38 2.91 137.75-14.73 20.44-17.7-6.86-38.86 10-60 10.72-13.45 25.28-23.64 40.86-31.35"/>
+<path fill="#44d488" stroke="#44d488" stroke-width="2" d="m2837.04-854.36 10.55-.93-7.67 7.31z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(69)</title><a xlink:title="bevy_render::camera::camera::camera_system&lt;bevy_render::camera::projection::OrthographicProjection&gt;">
+<path fill="#70b9fc" stroke="#0c88f9" d="M2689.5-820h-269v36h269z"/>
+<text x="2555" y="-798.3" fill="#01274a" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">camera_system&lt;OrthographicProjection&gt;</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(69)-&gt;node_System(73)</title><a xlink:title="SystemTypeSet(camera_system&lt;OrthographicProjection&gt;&quot;) → update_frusta&lt;OrthographicProjection&gt;">
+<path fill="none" stroke="#eede00" stroke-width="2" d="M2689.9-793.11c28.81-4.24 57.16-13.89 79.1-32.89 38.54-33.38-7.43-75.33 29-111a84 84 0 0 1 7.57-6.56"/>
+<path fill="#eede00" stroke="#eede00" stroke-width="2" d="m2803.53-946.4 10.27-2.6-6.41 8.44z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(70)</title><a xlink:title="bevy_render::camera::camera::camera_system&lt;bevy_render::camera::projection::PerspectiveProjection&gt;">
+<path fill="#70b9fc" stroke="#0c88f9" d="M2685-867h-260v36h260z"/>
+<text x="2555" y="-845.3" fill="#01274a" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">camera_system&lt;PerspectiveProjection&gt;</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(70)-&gt;node_System(74)</title><a xlink:title="SystemTypeSet(camera_system&lt;PerspectiveProjection&gt;&quot;) → update_frusta&lt;PerspectiveProjection&gt;">
+<path fill="none" stroke="#00b0cc" stroke-width="2" d="M2685.27-864.42c30.96-9.37 61.45-24.2 83.73-47.58 37.55-39.42-9.58-80.6 29-119a82 82 0 0 1 7.12-6.3"/>
+<path fill="#00b0cc" stroke="#00b0cc" stroke-width="2" d="m2803.16-1040.19 10.24-2.71-6.32 8.5z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(86)-&gt;set_marker_node_Set(87)</title><a xlink:title="CalculateBounds → CalculateBoundsFlush">
+<path fill="none" stroke="#99d955" stroke-width="2" d="M2624-1360h213.71"/>
+<path fill="#99d955" stroke="#99d955" stroke-width="2" d="m2837.47-1363.5 10 3.5-10 3.5z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(72)</title><a xlink:title="bevy_render::view::visibility::calculate_bounds">
+<path fill="#70b9fc" stroke="#0c88f9" d="M2616-1349h-122v36h122z"/>
+<text x="2555" y="-1327.3" fill="#01274a" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">calculate_bounds</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(87)-&gt;node_System(77)</title><a xlink:title="CalculateBoundsFlush → check_visibility">
+<path fill="none" stroke="#ee9e44" stroke-width="2" d="M3015.5-1374.49c19.36.93 38.45 6.13 52.5 19.49 19.32 18.37 3.83 218.6 21 239 6.77 8.05 15.9 13.56 25.76 17.3"/>
+<path fill="#ee9e44" stroke="#ee9e44" stroke-width="2" d="m3115.61-1102.1 8.54 6.26-10.58.44z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(87)-&gt;node_System(120)</title><a xlink:title="CalculateBoundsFlush → check_light_mesh_visibility">
+<path fill="none" stroke="#22c2bb" stroke-width="2" d="M3015.5-1358.08c17.34.72 35.54 1.72 52.5 3.08 201.77 16.23 251.85 25.77 452 56l4.89.75"/>
+<path fill="#22c2bb" stroke="#22c2bb" stroke-width="2" d="m3525.34-1301.72 9.32 5.03-10.43 1.88z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(71)</title><a xlink:title="bevy_ecs::schedule::executor::apply_system_buffers">
+<path fill="#e70000" stroke="#5a0000" stroke-width="2" d="M3007.5-1349h-149v36h149z"/>
+<text x="2933" y="-1327.3" fill="#fff" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">apply_system_buffers</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(88)-&gt;node_System(77)</title><a xlink:title="UpdateOrthographicFrusta → check_visibility">
+<path fill="none" stroke="#663699" stroke-width="2" d="M3051.63-1029a466 466 0 0 0 16.37-6c23.2-9.03 47.96-21.38 68.24-32.29"/>
+<path fill="#663699" stroke="#663699" stroke-width="2" d="m3134.5-1070.33 10.46-1.72-7.1 7.87z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(89)-&gt;node_System(77)</title><a xlink:title="UpdatePerspectiveFrusta → check_visibility">
+<path fill="none" stroke="#3363bb" stroke-width="2" d="M3064-1092h50.26"/>
+<path fill="#3363bb" stroke="#3363bb" stroke-width="2" d="m3114.23-1095.5 10 3.5-10 3.5z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(90)-&gt;node_System(77)</title><a xlink:title="UpdateProjectionFrusta → check_visibility">
+<path fill="none" stroke="#22c2bb" stroke-width="2" d="M3029-921.65c13.77-4.95 27.24-11.27 39-19.35 45.21-31.07 79.17-86.56 97.13-120.93"/>
+<path fill="#22c2bb" stroke="#22c2bb" stroke-width="2" d="m3162.01-1063.51 7.64-7.34-1.4 10.5z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(91)-&gt;node_System(115)</title><a xlink:title="CheckVisibility → assign_lights_to_clusters">
+<path fill="none" stroke="#22c2bb" stroke-width="2" d="M3119.5-1130.88c-16.64.96-32.43 6.22-41 20.38-35.58 58.8 52.18 262.93 87.79 340.38"/>
+<path fill="#22c2bb" stroke="#22c2bb" stroke-width="2" d="m3169.42-771.7 1.03 10.55-7.38-7.6z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(91)-&gt;node_System(120)</title><a xlink:title="CheckVisibility → check_light_mesh_visibility">
+<path fill="none" stroke="#881877" stroke-width="2" d="m3241.5-1142.44 321.33-114.81"/>
+<path fill="#881877" stroke="#881877" stroke-width="2" d="m3561.45-1260.47 10.59-.07-8.24 6.66z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(91)-&gt;node_System(117)</title><a xlink:title="CheckVisibility → update_directional_light_frusta">
+<path fill="none" stroke="#00b0cc" stroke-width="2" d="M3241.5-1129.06c11.32 1.41 22.2 5.21 30.5 13.06 28.16 26.62-1.6 137.33 21.74 184.71"/>
+<path fill="#00b0cc" stroke="#00b0cc" stroke-width="2" d="m3296.5-933.45 2.7 10.24-8.5-6.33z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(92)-&gt;node_System(77)</title><a xlink:title="VisibilityPropagate → check_visibility">
+<path fill="none" stroke="#99d955" stroke-width="2" d="M3032-1206.55c13.07 2.5 25.54 7.31 36 15.55 27.19 21.43-3.64 50.69 21 75 7.24 7.14 16.35 12.23 25.98 15.83"/>
+<path fill="#99d955" stroke="#99d955" stroke-width="2" d="m3115.94-1103.53 8.53 6.29-10.59.4z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(76)</title><a xlink:title="bevy_render::view::visibility::visibility_propagate_system">
+<path fill="#70b9fc" stroke="#0c88f9" d="M3024-1185h-182v36h182z"/>
+<text x="2933" y="-1163.3" fill="#01274a" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">visibility_propagate_system</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(107)</title><a xlink:title="bevy_ui::flex::flex_node_system">
+<path fill="#ffb1e5" stroke="#ff4bc2" d="M2292.5-1022h-126v36h126z"/>
+<text x="2229.5" y="-1000.3" fill="#4c0032" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">flex_node_system</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(107)-&gt;set_marker_node_Set(20)</title><a xlink:title="flex_node_system → TransformPropagate">
+<path fill="none" stroke="#44d488" stroke-width="2" d="M2292.52-994c10.46 2.83 20.99 6.43 30.48 11 5.13 2.47 4.66 6.04 10 8 21.52 7.88 71.03 9.71 117.75 9.43"/>
+<path fill="#44d488" stroke="#44d488" stroke-width="2" d="m2450.44-969.07 10.04 3.4-9.97 3.6z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(147)</title><a xlink:title="bevy_animation::animation_player">
+<path fill="#ffbdb9" stroke="#ff5c53" d="M2289.5-952h-120v36h120z"/>
+<text x="2229.5" y="-930.3" fill="#4c0400" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">animation_player</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(107)-&gt;node_System(147)</title><path fill="none" stroke="#c93526" stroke-width="2" d="M2229.5-985.97v33.58"/><a xlink:title="flex_node_system — animation_player">
+<path fill="#c6e6ff" d="M2184-959v-19h62v19z"/>
+<text x="2186" y="-964.8" fill="#c93526" font-family="Times,serif" font-size="14">Transform</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(108)</title><a xlink:title="bevy_ui::stack::ui_stack_system">
+<path fill="#ffb1e5" stroke="#ff4bc2" d="M2037-1216h-117v36h117z"/>
+<text x="1978.5" y="-1194.3" fill="#4c0032" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">ui_stack_system</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(137)-&gt;set_marker_node_Set(138)</title><a xlink:title="AddClusters → AddClustersFlush">
+<path fill="none" stroke="#ee9e44" stroke-width="2" d="M2609.5-670h228.21"/>
+<path fill="#ee9e44" stroke="#ee9e44" stroke-width="2" d="m2837.47-673.5 10 3.5-10 3.5z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(113)</title><a xlink:title="bevy_pbr::light::add_clusters">
+<path fill="#abd5fc" stroke="#48a3f8" d="M2601.5-659h-93v36h93z"/>
+<text x="2555" y="-637.3" fill="#022749" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">add_clusters</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(138)-&gt;set_marker_node_Set(139)</title><a xlink:title="AddClustersFlush → AssignLightsToClusters">
+<path fill="none" stroke="#663699" stroke-width="2" d="m3015.5-683.61 103.61-17.3"/>
+<path fill="#663699" stroke="#663699" stroke-width="2" d="m3118.18-704.31 10.44 1.81-9.29 5.1z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(114)</title><a xlink:title="bevy_ecs::schedule::executor::apply_system_buffers">
+<path fill="#e70000" stroke="#5a0000" stroke-width="2" d="M3007.5-659h-149v36h149z"/>
+<text x="2933" y="-637.3" fill="#fff" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">apply_system_buffers</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(139)-&gt;node_System(118)</title><a xlink:title="AssignLightsToClusters → update_point_light_frusta">
+<path fill="none" stroke="#ee9e44" stroke-width="2" d="M3272-717c39.05-14.13 76.61-44 100.83-66.1"/>
+<path fill="#ee9e44" stroke="#ee9e44" stroke-width="2" d="m3370.15-785.38 9.69-4.28-4.91 9.39z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(139)-&gt;node_System(119)</title><a xlink:title="AssignLightsToClusters → update_spot_light_frusta">
+<path fill="none" stroke="#3363bb" stroke-width="2" d="M3272-717c39.38-35.22-15.71-79.01 21-117a65 65 0 0 1 13.92-10.81"/>
+<path fill="#3363bb" stroke="#3363bb" stroke-width="2" d="m3305.34-847.93 10.52-1.18-7.49 7.49z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(141)-&gt;node_System(117)</title><a xlink:title="UpdateDirectionalLightCascades → update_directional_light_frusta">
+<path fill="none" stroke="#44d488" stroke-width="2" d="M3047.13-818c70.52-18.98 163.25-43.31 245.87-63l6.95-1.64"/>
+<path fill="#44d488" stroke="#44d488" stroke-width="2" d="m3299.15-886.05 10.53 1.18-8.96 5.65z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(142)-&gt;node_System(120)</title><a xlink:title="UpdateLightFrusta → check_light_mesh_visibility">
+<path fill="none" stroke="#eede00" stroke-width="2" d="m3422.05-964 185.51-286.73"/>
+<path fill="#eede00" stroke="#eede00" stroke-width="2" d="m3604.59-1252.58 8.37-6.5-2.49 10.3z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(45)</title><a xlink:title="bevy_window::system::exit_on_all_closed">
+<path fill="#bb85d4" stroke="#8e3fb3" d="M2042.5-1075h-128v36h128z"/>
+<text x="1978.5" y="-1053.3" fill="#2c1338" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">exit_on_all_closed</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(99)</title><a xlink:title="bevy_text::text2d::update_text2d_layout">
+<path fill="#e9bbff" stroke="#c855ff" d="M2051.5-1028h-146v36h146z"/>
+<text x="1978.5" y="-1006.3" fill="#33004c" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">update_text2d_layout</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(101)</title><a xlink:title="bevy_ui::widget::text::text_system">
+<path fill="#ffb1e5" stroke="#ff4bc2" d="M2023-1122h-89v36h89z"/>
+<text x="1978.5" y="-1100.3" fill="#4c0032" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">text_system</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(101)-&gt;set_marker_node_Set(122)</title><a xlink:title="text_system → Flex">
+<path fill="none" stroke="#00b0cc" stroke-width="2" d="M2023.47-1099.49c27.54 3.5 63.56 9.34 94.53 18.49a408 408 0 0 1 34.63 12.16"/>
+<path fill="#00b0cc" stroke="#00b0cc" stroke-width="2" d="m2153.67-1072.19 7.92 7.04-10.58-.57z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(106)</title><a xlink:title="bevy_ui::widget::image::update_image_calculated_size_system">
+<path fill="#ffb1e5" stroke="#ff4bc2" d="M2105.5-981h-254v36h254z"/>
+<text x="1978.5" y="-959.3" fill="#4c0032" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">update_image_calculated_size_system</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(106)-&gt;set_marker_node_Set(122)</title><a xlink:title="update_image_calculated_size_system → Flex">
+<path fill="none" stroke="#aa3a55" stroke-width="2" d="M2105.75-980.26q6.36-3.03 12.25-6.74c16.22-10.24 11.58-25.14 29.63-39.15"/>
+<path fill="#aa3a55" stroke="#aa3a55" stroke-width="2" d="m2145.6-1029.01 10.34-2.33-6.63 8.27z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(142)</title><a xlink:title="bevy_audio::audio_output::play_queued_audio_system&lt;bevy_audio::audio_source::AudioSource&gt;">
+<path fill="#98f1d1" stroke="#3ee4a8" d="M2118-651h-279v36h279z"/>
+<text x="1978.5" y="-629.3" fill="#09432e" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">play_queued_audio_system&lt;AudioSource&gt;</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(147)-&gt;set_marker_node_Set(20)</title><a xlink:title="animation_player → TransformPropagate">
+<path fill="none" stroke="#aa3a55" stroke-width="2" d="M2283.89-952.5c15.64-4.63 32.89-8.99 49.11-11.5 38.09-5.9 80.31-7.94 117.55-8.24"/>
+<path fill="#aa3a55" stroke="#aa3a55" stroke-width="2" d="m2450.47-975.74 10.01 3.47-9.99 3.53z"/>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(12)-&gt;set_marker_node_Set(6)</title><a xlink:title="Last → LastFlush">
+<path fill="none" stroke="#99d955" stroke-width="2" d="M2795.65-325q1.1 1 2.35 2c11.84 9.3 25.87 16.26 40.31 21.48"/>
+<path fill="#99d955" stroke="#99d955" stroke-width="2" d="m2839.21-304.91 8.42 6.43-10.6.22z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(6)</title><a xlink:title="bevy_core::tick_global_task_pools">
+<path fill="#3e583c" stroke="#689465" d="M2631-521h-152v36h152z"/>
+<text x="2555" y="-499.3" fill="#d2dfd1" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">tick_global_task_pools</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(7)</title><a xlink:title="bevy_core::update_frame_count">
+<path fill="#3e583c" stroke="#689465" d="M2625.5-474h-141v36h141z"/>
+<text x="2555" y="-452.3" fill="#d2dfd1" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">update_frame_count</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(10)</title><a xlink:title="bevy_hierarchy::valid_parent_check_plugin::check_hierarchy_component_has_valid_parent&lt;bevy_transform::components::global_transform::GlobalTransform&gt;">
+<path fill="#e4fba3" stroke="#c7f641" d="M2764.5-427h-419v36h419z"/>
+<text x="2555" y="-405.3" fill="#364903" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">check_hierarchy_component_has_valid_parent&lt;GlobalTransform&gt;</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(57)</title><a xlink:title="bevy_winit::system::changed_window">
+<path fill="#664f72" stroke="#9980a6" d="M2615.5-568h-121v36h121z"/>
+<text x="2555" y="-546.3" fill="#dad1df" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">changed_window</text>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(58)</title><a xlink:title="bevy_winit::system::despawn_window">
+<path fill="#664f72" stroke="#9980a6" d="M2994.5-568h-123v36h123z"/>
+<text x="2933" y="-546.3" fill="#dad1df" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">despawn_window</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>node_System(57)-&gt;node_System(58)</title><a xlink:title="SystemTypeSet(changed_window&quot;) → despawn_window">
+<path fill="none" stroke="#22c2bb" stroke-width="2" d="M2615.99-550h242.5"/>
+<path fill="#22c2bb" stroke="#22c2bb" stroke-width="2" d="m2858.26-553.5 10 3.5-10 3.5z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(67)</title><a xlink:title="bevy_hierarchy::valid_parent_check_plugin::check_hierarchy_component_has_valid_parent&lt;bevy_render::view::visibility::ComputedVisibility&gt;">
+<path fill="#e4fba3" stroke="#c7f641" d="M2769-369h-428v36h428z"/>
+<text x="2555" y="-347.3" fill="#364903" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">check_hierarchy_component_has_valid_parent&lt;ComputedVisibility&gt;</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(59)-&gt;set_marker_node_Set(8)</title><a xlink:title="LoadAssets → PreUpdate">
+<path fill="none" stroke="#0090cc" stroke-width="2" d="m352-677.96 78.61-19.92"/>
+<path fill="#0090cc" stroke="#0090cc" stroke-width="2" d="m429.45-701.19 10.55.93-8.83 5.85z"/>
+</a></g><g class="node" transform="translate(4 1434)"><title>node_System(48)</title><a xlink:title="bevy_asset::io::file_asset_io::filesystem_watcher_system">
+<path fill="#d1cbc5" stroke="#a3978c" d="M344-642H161v36h183z"/>
+<text x="252.5" y="-620.3" fill="#2a2621" font-family="Helvetica,sans-Serif" font-size="14" text-anchor="middle">filesystem_watcher_system</text>
+</a></g><g class="edge" transform="translate(4 1434)"><title>set_marker_node_Set(60)-&gt;set_marker_node_Set(12)</title><a xlink:title="AssetEvents → Last">
+<path fill="none" stroke="#3363bb" stroke-width="2" d="M2252.65-407c17.5 5.96 43.02 13.89 67.7 18.77"/>
+<path fill="#3363bb" stroke="#3363bb" stroke-width="2" d="m2320.78-391.71 9.24 5.18-10.46 1.72z"/>
+</a></g></g></svg>
