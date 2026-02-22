@@ -1,6 +1,7 @@
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll};
 use bevy::prelude::*;
+use bevy::app::AppExit;
 use bevy::window::{PresentMode, WindowResolution};
 use std::time::Duration;
 
@@ -28,6 +29,7 @@ fn main() {
             affects_lightmapped_meshes: true,
         })
         .add_systems(Startup, setup_world)
+        .add_systems(Update, exit_on_escape)
         .add_systems(Update, (player_move, third_person_camera).chain())
         .add_systems(Update, update_performance_overlay)
         .run();
@@ -403,6 +405,12 @@ fn update_performance_overlay(
 
     for mut text in &mut text_query {
         **text = format!("FPS: {fps:>6.1}\nFrame time: {frame_time_ms:>6.2} ms");
+    }
+}
+
+fn exit_on_escape(keys: Res<ButtonInput<KeyCode>>, mut app_exit: MessageWriter<AppExit>) {
+    if keys.just_pressed(KeyCode::Escape) {
+        app_exit.write(AppExit::Success);
     }
 }
 
