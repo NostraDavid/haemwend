@@ -37,6 +37,8 @@
             rustToolchain
             pkgs.cargo-watch
             pkgs.just
+            pkgs.oxipng
+            pkgs.pngquant
             pkgs.pkg-config
             pkgs.openssl
             pkgs.alsa-lib
