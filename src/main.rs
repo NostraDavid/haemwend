@@ -1,5 +1,6 @@
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll};
+use bevy::light::{CascadeShadowConfigBuilder, DirectionalLightShadowMap, ShadowFilteringMethod};
 use bevy::prelude::*;
 use bevy::app::AppExit;
 use bevy::window::{PresentMode, WindowResolution};
@@ -23,9 +24,11 @@ fn main() {
                 ..default()
             },
         ))
+        .insert_resource(ClearColor(Color::srgb(0.57, 0.70, 0.92)))
+        .insert_resource(DirectionalLightShadowMap { size: 512 })
         .insert_resource(GlobalAmbientLight {
-            color: Color::srgb(0.6, 0.65, 0.7),
-            brightness: 250.0,
+            color: Color::srgb(0.56, 0.61, 0.67),
+            brightness: 135.0,
             affects_lightmapped_meshes: true,
         })
         .add_systems(Startup, setup_world)
@@ -111,8 +114,8 @@ fn setup_world(
 ) {
     let player_mesh = meshes.add(Cuboid::new(0.8, 1.8, 0.8));
     let player_mat = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.84, 0.82, 0.7),
-        perceptual_roughness: 0.8,
+        base_color: Color::srgb(0.91, 0.84, 0.64),
+        perceptual_roughness: 0.88,
         ..default()
     });
 
@@ -134,20 +137,42 @@ fn setup_world(
         Camera3d::default(),
         Transform::from_xyz(0.0, 4.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
         ThirdPersonCameraRig::default(),
+        Msaa::Off,
+        ShadowFilteringMethod::Hardware2x2,
+        DistanceFog {
+            color: Color::srgba(0.62, 0.72, 0.84, 1.0),
+            directional_light_color: Color::srgba(0.97, 0.88, 0.70, 0.5),
+            directional_light_exponent: 20.0,
+            falloff: FogFalloff::Linear {
+                start: 22.0,
+                end: 78.0,
+            },
+        },
     ));
 
     commands.spawn((
         DirectionalLight {
+            color: Color::srgb(1.0, 0.90, 0.70),
             shadows_enabled: true,
-            illuminance: 25_000.0,
+            illuminance: 12_500.0,
+            shadow_depth_bias: 0.09,
+            shadow_normal_bias: 2.2,
             ..default()
         },
         Transform::from_xyz(18.0, 24.0, 12.0).looking_at(Vec3::ZERO, Vec3::Y),
+        CascadeShadowConfigBuilder {
+            num_cascades: 3,
+            first_cascade_far_bound: 8.0,
+            maximum_distance: 46.0,
+            overlap_proportion: 0.08,
+            ..default()
+        }
+        .build(),
     ));
 
     let ground_mesh = meshes.add(Cuboid::new(120.0, 0.1, 120.0));
     let ground_mat = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.17, 0.35, 0.18),
+        base_color: Color::srgb(0.22, 0.43, 0.20),
         perceptual_roughness: 1.0,
         ..default()
     });
@@ -166,19 +191,19 @@ fn setup_world(
     let crate_mesh = meshes.add(Cuboid::new(1.0, 1.0, 1.0));
 
     let wall_mat = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.48, 0.44, 0.4),
-        perceptual_roughness: 0.95,
+        base_color: Color::srgb(0.57, 0.52, 0.44),
+        perceptual_roughness: 0.92,
         ..default()
     });
     let tower_mat = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.28, 0.31, 0.42),
-        metallic: 0.05,
-        perceptual_roughness: 0.75,
+        base_color: Color::srgb(0.34, 0.38, 0.55),
+        metallic: 0.0,
+        perceptual_roughness: 0.88,
         ..default()
     });
     let crate_mat = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.58, 0.36, 0.2),
-        perceptual_roughness: 0.9,
+        base_color: Color::srgb(0.69, 0.44, 0.24),
+        perceptual_roughness: 0.86,
         ..default()
     });
 
