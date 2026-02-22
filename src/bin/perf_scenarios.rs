@@ -96,9 +96,7 @@ fn parse_args() -> Result<Args, Box<dyn Error>> {
     while let Some(arg) = iter.next() {
         match arg.as_str() {
             "--scenario-file" => {
-                let value = iter
-                    .next()
-                    .ok_or("--scenario-file verwacht een pad")?;
+                let value = iter.next().ok_or("--scenario-file verwacht een pad")?;
                 scenario_file = PathBuf::from(value);
             }
             "--output" => {
@@ -106,9 +104,7 @@ fn parse_args() -> Result<Args, Box<dyn Error>> {
                 output = PathBuf::from(value);
             }
             "--repeats" => {
-                let value = iter
-                    .next()
-                    .ok_or("--repeats verwacht een getal")?;
+                let value = iter.next().ok_or("--repeats verwacht een getal")?;
                 repeats = value.parse()?;
             }
             "--warmup" => {

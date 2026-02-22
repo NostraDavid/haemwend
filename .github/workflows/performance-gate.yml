@@ -1,0 +1,89 @@
+name: Performance Gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: perf-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  perf-gate:
+    name: Compare base vs head performance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout head
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run head scenarios
+        run: |
+          cargo run --release --bin perf_scenarios -- \
+            --scenario-file perf/scenarios.ron \
+            --output /tmp/perf_head.csv \
+            --warmup 1 \
+            --repeats 3
+
+      - name: Store compare script
+        if: github.event_name == 'pull_request'
+        run: cp scripts/compare_perf_results.py /tmp/compare_perf_results.py
+
+      - name: Checkout base commit
+        if: github.event_name == 'pull_request'
+        run: git checkout ${{ github.event.pull_request.base.sha }}
+
+      - name: Detect base benchmark support
+        if: github.event_name == 'pull_request'
+        id: base_support
+        run: |
+          if [ -f src/bin/perf_scenarios.rs ] && [ -f perf/scenarios.ron ]; then
+            echo "supported=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "supported=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run base scenarios
+        if: github.event_name == 'pull_request' && steps.base_support.outputs.supported == 'true'
+        run: |
+          cargo run --release --bin perf_scenarios -- \
+            --scenario-file perf/scenarios.ron \
+            --output /tmp/perf_base.csv \
+            --warmup 1 \
+            --repeats 3
+
+      - name: Compare head against base (10% gate)
+        if: github.event_name == 'pull_request' && steps.base_support.outputs.supported == 'true'
+        run: |
+          uv run /tmp/compare_perf_results.py \
+            --base /tmp/perf_base.csv \
+            --head /tmp/perf_head.csv \
+            --max-regression-pct 10
+
+      - name: Skip compare when base has no benchmark harness
+        if: github.event_name == 'pull_request' && steps.base_support.outputs.supported != 'true'
+        run: |
+          echo "Base branch bevat nog geen perf benchmark harness; vergelijking wordt overgeslagen."
+
+      - name: Upload head artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-head-results
+          path: /tmp/perf_head.csv
+
+      - name: Upload base artifact
+        if: github.event_name == 'pull_request' && steps.base_support.outputs.supported == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-base-results
+          path: /tmp/perf_base.csv

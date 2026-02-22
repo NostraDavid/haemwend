@@ -7,6 +7,8 @@ Dit project gebruikt een CI-gate voor performance regressies op pull requests.
 - Draait dezelfde scenario's op de `base` commit van de PR.
 - Vergelijkt `ns_per_step_median` per scenario.
 - Faalt de workflow als een scenario meer dan `10%` trager is.
+- Als `base` de benchmark-harness nog niet heeft (eerste introductie-PR), wordt vergelijken automatisch overgeslagen.
+- Draait het vergelijkscript via `uv run`.
 
 Workflow-bestand: `.github/workflows/performance-gate.yml`
 
@@ -33,7 +35,7 @@ cargo run --release --bin perf_scenarios -- \
 Vergelijk twee runs:
 
 ```bash
-python3 scripts/compare_perf_results.py \
+uv run scripts/compare_perf_results.py \
   --base perf_base.csv \
   --head perf_head.csv \
   --max-regression-pct 10

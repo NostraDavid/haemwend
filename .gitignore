@@ -11,3 +11,6 @@
 # folders
 !docs/
 !src/
+!.github/
+!scripts/
+!perf/

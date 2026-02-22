@@ -1,0 +1,20 @@
+[
+  (
+    name: "movement_light",
+    entities: 2000,
+    steps: 1200,
+    complexity: 8,
+  ),
+  (
+    name: "movement_typical",
+    entities: 6000,
+    steps: 1500,
+    complexity: 10,
+  ),
+  (
+    name: "movement_stress",
+    entities: 12000,
+    steps: 1800,
+    complexity: 12,
+  ),
+]
