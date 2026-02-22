@@ -48,6 +48,18 @@
             pkgs.libxrandr
           ];
 
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+            pkgs.alsa-lib
+            pkgs.libxkbcommon
+            pkgs.udev
+            pkgs.vulkan-loader
+            pkgs.wayland
+            pkgs.libx11
+            pkgs.libxcursor
+            pkgs.libxi
+            pkgs.libxrandr
+          ];
+
           RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
         };
       }
