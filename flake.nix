@@ -35,6 +35,8 @@
         devShells.default = pkgs.mkShell {
           packages = [
             rustToolchain
+            pkgs.cargo-watch
+            pkgs.just
             pkgs.pkg-config
             pkgs.openssl
             pkgs.alsa-lib
