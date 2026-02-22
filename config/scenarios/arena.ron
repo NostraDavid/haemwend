@@ -1,0 +1,14 @@
+(
+    id: "arena",
+    name: "Iron Arena",
+    description: "Compacte arena met dichter op elkaar staande obstakels.",
+    ground_extent: 80.0,
+    crate_grid_radius: 6,
+    crate_spacing: 2.6,
+    crate_pattern_mod: 3,
+    wall_count: 7,
+    wall_spacing: 2.6,
+    wall_z: -16.0,
+    tower_z: -24.0,
+    sun_position: (14.0, 20.0, 10.0),
+)

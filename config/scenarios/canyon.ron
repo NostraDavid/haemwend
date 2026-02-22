@@ -1,0 +1,14 @@
+(
+    id: "canyon",
+    name: "Red Canyon",
+    description: "Langgerekte map met pilaren en sterke dieptewerking.",
+    ground_extent: 180.0,
+    crate_grid_radius: 10,
+    crate_spacing: 3.4,
+    crate_pattern_mod: 5,
+    wall_count: 9,
+    wall_spacing: 3.5,
+    wall_z: -30.0,
+    tower_z: -42.0,
+    sun_position: (22.0, 30.0, 14.0),
+)

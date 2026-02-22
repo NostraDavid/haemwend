@@ -1,0 +1,14 @@
+(
+    id: "highlands",
+    name: "Frost Highlands",
+    description: "Grote open vlakte met weinig dekking en lange zichtlijnen.",
+    ground_extent: 240.0,
+    crate_grid_radius: 12,
+    crate_spacing: 4.2,
+    crate_pattern_mod: 6,
+    wall_count: 4,
+    wall_spacing: 5.5,
+    wall_z: -40.0,
+    tower_z: -58.0,
+    sun_position: (28.0, 35.0, 16.0),
+)

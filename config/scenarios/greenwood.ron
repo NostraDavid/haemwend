@@ -1,0 +1,14 @@
+(
+    id: "greenwood",
+    name: "Greenwood Valley",
+    description: "Open veld met verspreide kratten en muursegmenten.",
+    ground_extent: 120.0,
+    crate_grid_radius: 8,
+    crate_spacing: 3.0,
+    crate_pattern_mod: 4,
+    wall_count: 5,
+    wall_spacing: 3.2,
+    wall_z: -20.0,
+    tower_z: -30.0,
+    sun_position: (18.0, 24.0, 12.0),
+)

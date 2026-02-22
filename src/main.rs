@@ -10,11 +10,11 @@ use bevy::window::{
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 const CONFIG_PATH: &str = "config/game_config.ron";
-const SCENARIOS_PATH_DEFAULT: &str = "config/scenarios.ron";
+const SCENARIOS_PATH_DEFAULT: &str = "config/scenarios";
 const RESOLUTION_OPTIONS: &[(u32, u32)] = &[
     (1280, 720),
     (1600, 900),
@@ -63,14 +63,14 @@ impl ScenarioCatalog {
 #[derive(Debug, Clone)]
 struct CliOptions {
     scenario_id: Option<String>,
-    scenarios_file: String,
+    scenarios_path: String,
 }
 
 impl Default for CliOptions {
     fn default() -> Self {
         Self {
             scenario_id: None,
-            scenarios_file: SCENARIOS_PATH_DEFAULT.to_string(),
+            scenarios_path: SCENARIOS_PATH_DEFAULT.to_string(),
         }
     }
 }
@@ -447,6 +447,9 @@ struct BakedShadow;
 struct MenuRoot;
 
 #[derive(Component)]
+struct InGameEntity;
+
+#[derive(Component)]
 struct StartMenuRoot;
 
 #[derive(Component)]
@@ -526,7 +529,7 @@ impl Default for ThirdPersonCameraRig {
 
 fn main() {
     let cli = parse_cli_options();
-    let scenario_catalog = load_scenario_catalog(Path::new(&cli.scenarios_file));
+    let scenario_catalog = load_scenario_catalog(Path::new(&cli.scenarios_path));
     let pending_scenario = if let Some(requested_id) = cli.scenario_id.as_deref() {
         match scenario_catalog.index_by_id(requested_id) {
             Some(index) => Some(index),
@@ -724,6 +727,7 @@ fn load_pending_scenario(
     mut commands: Commands,
     mut flow: ResMut<GameFlowState>,
     scenarios: Res<ScenarioCatalog>,
+    mut settings: ResMut<GameSettings>,
     mut menu: ResMut<MenuState>,
     start_menu_roots: Query<Entity, With<StartMenuRoot>>,
     start_menu_cameras: Query<Entity, With<StartMenuCamera>>,
@@ -751,6 +755,7 @@ fn load_pending_scenario(
     menu.dirty = false;
 
     spawn_scenario_world(&mut commands, &mut meshes, &mut materials, &scenario);
+    settings.set_changed();
     flow.in_game = true;
 }
 
@@ -805,6 +810,7 @@ fn spawn_scenario_world(
             vertical_velocity: 0.0,
             grounded: true,
         },
+        InGameEntity,
     ));
 
     commands.spawn((
@@ -814,6 +820,7 @@ fn spawn_scenario_world(
         Transform::from_xyz(0.0, 0.015, 0.0).with_scale(Vec3::new(0.9, 1.0, 0.9)),
         NotShadowCaster,
         NotShadowReceiver,
+        InGameEntity,
     ));
 
     commands.spawn((
@@ -830,6 +837,7 @@ fn spawn_scenario_world(
                 end: 78.0,
             },
         },
+        InGameEntity,
     ));
 
     commands.spawn((
@@ -840,6 +848,7 @@ fn spawn_scenario_world(
             ..default()
         },
         Transform::from_translation(sun_position).looking_at(Vec3::ZERO, Vec3::Y),
+        InGameEntity,
     ));
 
     let ground_mesh = meshes.add(Cuboid::new(ground_extent, 0.1, ground_extent));
@@ -856,6 +865,7 @@ fn spawn_scenario_world(
         WorldCollider {
             half_extents: Vec3::new(ground_extent * 0.5, 0.05, ground_extent * 0.5),
         },
+        InGameEntity,
     ));
 
     let wall_mesh = meshes.add(Cuboid::new(3.0, 3.0, 3.0));
@@ -891,6 +901,7 @@ fn spawn_scenario_world(
                     WorldCollider {
                         half_extents: Vec3::splat(0.5),
                     },
+                    InGameEntity,
                 ));
                 spawn_baked_shadow(
                     commands,
@@ -916,6 +927,7 @@ fn spawn_scenario_world(
             WorldCollider {
                 half_extents: Vec3::splat(1.5),
             },
+            InGameEntity,
         ));
         spawn_baked_shadow(
             commands,
@@ -934,6 +946,7 @@ fn spawn_scenario_world(
         WorldCollider {
             half_extents: Vec3::new(2.0, 4.0, 2.0),
         },
+        InGameEntity,
     ));
     spawn_baked_shadow(
         commands,
@@ -944,12 +957,15 @@ fn spawn_scenario_world(
     );
 
     commands
-        .spawn(Node {
-            position_type: PositionType::Absolute,
-            top: px(12),
-            left: px(12),
-            ..default()
-        })
+        .spawn((
+            InGameEntity,
+            Node {
+                position_type: PositionType::Absolute,
+                top: px(12),
+                left: px(12),
+                ..default()
+            },
+        ))
         .with_child(Text::new(
             format!(
                 "Scenario: {}\nESC: menu\nLMB: camera orbit\nRMB: aim-move mode\nScroll: zoom\n\nKeybinds zijn aanpasbaar in het menu.",
@@ -959,6 +975,7 @@ fn spawn_scenario_world(
 
     commands.spawn((
         PerformanceOverlayText,
+        InGameEntity,
         Text::new("FPS: --\nFrame time: -- ms"),
         Node {
             position_type: PositionType::Absolute,
@@ -1000,9 +1017,15 @@ fn handle_menu_buttons(
         (&Interaction, &MenuButton, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>),
     >,
+    mut commands: Commands,
+    scenarios: Res<ScenarioCatalog>,
+    mut flow: ResMut<GameFlowState>,
     mut menu: ResMut<MenuState>,
     mut settings: ResMut<GameSettings>,
     keybinds: ResMut<GameKeybinds>,
+    in_game_entities: Query<Entity, With<InGameEntity>>,
+    start_menu_roots: Query<Entity, With<StartMenuRoot>>,
+    start_menu_cameras: Query<Entity, With<StartMenuCamera>>,
     mut app_exit: MessageWriter<AppExit>,
 ) {
     if !menu.open {
@@ -1039,7 +1062,30 @@ fn handle_menu_buttons(
                         menu.awaiting_rebind = None;
                     }
                     MenuButtonAction::ExitNow => {
-                        app_exit.write(AppExit::Success);
+                        if flow.in_game {
+                            for entity in &in_game_entities {
+                                commands.entity(entity).despawn();
+                            }
+                            for root in &start_menu_roots {
+                                commands.entity(root).despawn();
+                            }
+                            for camera in &start_menu_cameras {
+                                commands.entity(camera).despawn();
+                            }
+
+                            commands.spawn((Camera2d, StartMenuCamera));
+                            spawn_start_menu_ui(&mut commands, &scenarios);
+
+                            flow.in_game = false;
+                            flow.pending_scenario = None;
+
+                            menu.open = false;
+                            menu.screen = MenuScreen::Main;
+                            menu.awaiting_rebind = None;
+                            menu.keybind_filter.clear();
+                        } else {
+                            app_exit.write(AppExit::Success);
+                        }
                     }
                     MenuButtonAction::CycleDisplayMode => {
                         settings.display_mode = settings.display_mode.next();
@@ -1153,6 +1199,7 @@ fn capture_keybind_filter_input(
 
 fn rebuild_menu_ui(
     mut commands: Commands,
+    flow: Res<GameFlowState>,
     mut menu: ResMut<MenuState>,
     existing_roots: Query<Entity, With<MenuRoot>>,
     settings: Res<GameSettings>,
@@ -1201,7 +1248,13 @@ fn rebuild_menu_ui(
                         MenuScreen::Main => "Game Menu",
                         MenuScreen::Settings => "Settings",
                         MenuScreen::Keybinds => "Keybinds",
-                        MenuScreen::ExitConfirm => "Exit",
+                        MenuScreen::ExitConfirm => {
+                            if flow.in_game {
+                                "Terug naar hoofdmenu"
+                            } else {
+                                "Exit"
+                            }
+                        }
                     }),
                     Node {
                         margin: UiRect::bottom(px(12)),
@@ -1245,7 +1298,11 @@ fn rebuild_menu_ui(
                                 menu_button_node(),
                                 menu_button_normal_color(),
                             ))
-                            .with_child(Text::new("Exit"));
+                            .with_child(Text::new(if flow.in_game {
+                                "Terug naar hoofdmenu"
+                            } else {
+                                "Exit"
+                            }));
                     }
                     MenuScreen::Settings => {
                         panel
@@ -1384,7 +1441,11 @@ fn rebuild_menu_ui(
                     }
                     MenuScreen::ExitConfirm => {
                         panel.spawn((
-                            Text::new("Weet je het zeker?"),
+                            Text::new(if flow.in_game {
+                                "Terug naar het hoofdmenu?"
+                            } else {
+                                "Weet je het zeker?"
+                            }),
                             Node {
                                 margin: UiRect::bottom(px(10)),
                                 ..default()
@@ -1398,7 +1459,11 @@ fn rebuild_menu_ui(
                                 menu_button_node(),
                                 menu_button_normal_color(),
                             ))
-                            .with_child(Text::new("Ja, Exit"));
+                            .with_child(Text::new(if flow.in_game {
+                                "Ja, hoofdmenu"
+                            } else {
+                                "Ja, Exit"
+                            }));
 
                         panel
                             .spawn((
@@ -1779,6 +1844,7 @@ fn spawn_baked_shadow(
 ) {
     commands.spawn((
         BakedShadow,
+        InGameEntity,
         Mesh3d(shadow_mesh.clone()),
         MeshMaterial3d(shadow_material.clone()),
         Transform::from_translation(center).with_scale(Vec3::new(size.x, 1.0, size.y)),
@@ -1888,12 +1954,12 @@ fn parse_cli_options() -> CliOptions {
                 };
                 options.scenario_id = Some(value);
             }
-            "--scenarios-file" => {
+            "--scenarios-dir" | "--scenarios-path" | "--scenarios-file" => {
                 let Some(value) = args.next() else {
-                    eprintln!("--scenarios-file verwacht een pad");
+                    eprintln!("{arg} verwacht een pad");
                     print_cli_help_and_exit(2);
                 };
-                options.scenarios_file = value;
+                options.scenarios_path = value;
             }
             "--help" | "-h" => {
                 print_cli_help_and_exit(0);
@@ -1910,7 +1976,7 @@ fn parse_cli_options() -> CliOptions {
 
 fn print_cli_help_and_exit(code: i32) -> ! {
     println!(
-        "Gebruik:\n  haemwend [opties]\n\nOpties:\n  -s, --scenario <id>        Start direct met scenario-id\n      --scenarios-file <pad> Scenario-definities (RON)\n  -h, --help                 Toon hulp"
+        "Gebruik:\n  haemwend [opties]\n\nOpties:\n  -s, --scenario <id>         Start direct met scenario-id\n      --scenarios-dir <pad>   Map met scenario-bestanden (1 .ron per scenario)\n      --scenarios-path <pad>  Alias voor --scenarios-dir\n      --scenarios-file <pad>  Legacy alias (ondersteunt ook 1 bestand)\n  -h, --help                  Toon hulp"
     );
     std::process::exit(code);
 }
@@ -1959,67 +2025,223 @@ fn default_scenarios() -> Vec<ScenarioDefinition> {
             tower_z: -42.0,
             sun_position: [22.0, 30.0, 14.0],
         },
+        ScenarioDefinition {
+            id: "gauntlet".to_string(),
+            name: "Stone Gauntlet".to_string(),
+            description: "Smalle route met dichte obstakels voor korte, intensieve runs.".to_string(),
+            ground_extent: 72.0,
+            crate_grid_radius: 5,
+            crate_spacing: 2.2,
+            crate_pattern_mod: 2,
+            wall_count: 11,
+            wall_spacing: 2.1,
+            wall_z: -14.0,
+            tower_z: -20.0,
+            sun_position: [12.0, 18.0, 8.0],
+        },
+        ScenarioDefinition {
+            id: "highlands".to_string(),
+            name: "Frost Highlands".to_string(),
+            description: "Grote open vlakte met weinig dekking en lange zichtlijnen.".to_string(),
+            ground_extent: 240.0,
+            crate_grid_radius: 12,
+            crate_spacing: 4.2,
+            crate_pattern_mod: 6,
+            wall_count: 4,
+            wall_spacing: 5.5,
+            wall_z: -40.0,
+            tower_z: -58.0,
+            sun_position: [28.0, 35.0, 16.0],
+        },
     ]
 }
 
-fn write_scenario_catalog(path: &Path, scenarios: &[ScenarioDefinition]) {
+fn is_ron_file(path: &Path) -> bool {
+    path.extension()
+        .and_then(|ext| ext.to_str())
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("ron"))
+}
+
+fn filter_valid_scenarios(
+    mut scenarios: Vec<ScenarioDefinition>,
+    source: &str,
+) -> Vec<ScenarioDefinition> {
+    scenarios.retain(|scenario| !scenario.id.trim().is_empty() && !scenario.name.trim().is_empty());
+    if scenarios.is_empty() {
+        eprintln!("Scenario-bron ({source}) bevat geen geldige scenario's");
+    }
+    scenarios
+}
+
+fn write_default_scenarios_to_dir(path: &Path) -> bool {
+    if let Err(err) = fs::create_dir_all(path) {
+        eprintln!("Kon scenario-map niet maken ({}): {err}", path.display());
+        return false;
+    }
+
+    let pretty = ron::ser::PrettyConfig::default();
+    for scenario in default_scenarios() {
+        let file_path = path.join(format!("{}.ron", scenario.id));
+        if file_path.exists() {
+            continue;
+        }
+
+        let serialized = match ron::ser::to_string_pretty(&scenario, pretty.clone()) {
+            Ok(content) => content,
+            Err(err) => {
+                eprintln!("Kon scenario '{}' niet serialiseren: {err}", scenario.id);
+                return false;
+            }
+        };
+
+        if let Err(err) = fs::write(&file_path, serialized) {
+            eprintln!("Kon scenario niet opslaan ({}): {err}", file_path.display());
+            return false;
+        }
+    }
+
+    true
+}
+
+fn write_default_scenarios_to_file(path: &Path) -> bool {
     if let Some(parent) = path.parent() {
         if let Err(err) = fs::create_dir_all(parent) {
             eprintln!("Kon scenario-map niet maken ({}): {err}", parent.display());
-            return;
+            return false;
         }
     }
 
-    let serialized = match ron::ser::to_string_pretty(scenarios, ron::ser::PrettyConfig::default()) {
-        Ok(content) => content,
-        Err(err) => {
-            eprintln!("Kon scenario's niet serialiseren: {err}");
-            return;
-        }
-    };
+    let serialized =
+        match ron::ser::to_string_pretty(&default_scenarios(), ron::ser::PrettyConfig::default()) {
+            Ok(content) => content,
+            Err(err) => {
+                eprintln!("Kon standaardscenario's niet serialiseren: {err}");
+                return false;
+            }
+        };
 
     if let Err(err) = fs::write(path, serialized) {
-        eprintln!("Kon scenario's niet opslaan ({}): {err}", path.display());
+        eprintln!("Kon scenario-bestand niet opslaan ({}): {err}", path.display());
+        return false;
     }
+
+    true
 }
 
-fn load_scenario_catalog(path: &Path) -> ScenarioCatalog {
-    if !path.exists() {
-        let defaults = default_scenarios();
-        write_scenario_catalog(path, &defaults);
-        return ScenarioCatalog { scenarios: defaults };
-    }
-
+fn load_scenarios_from_file(path: &Path) -> Vec<ScenarioDefinition> {
+    let source = path.display().to_string();
     let content = match fs::read_to_string(path) {
         Ok(content) => content,
         Err(err) => {
             eprintln!("Kon scenario-bestand niet lezen ({}): {err}", path.display());
-            return ScenarioCatalog {
-                scenarios: default_scenarios(),
-            };
+            return Vec::new();
         }
     };
 
-    let mut loaded = match ron::from_str::<Vec<ScenarioDefinition>>(&content) {
-        Ok(scenarios) => scenarios,
-        Err(err) => {
-            eprintln!("Kon scenario's niet parsen ({}): {err}", path.display());
-            return ScenarioCatalog {
-                scenarios: default_scenarios(),
-            };
-        }
-    };
-
-    loaded.retain(|scenario| !scenario.id.trim().is_empty() && !scenario.name.trim().is_empty());
-    if loaded.is_empty() {
-        eprintln!(
-            "Scenario-bestand ({}) bevat geen geldige scenario's, gebruik defaults",
-            path.display()
-        );
-        loaded = default_scenarios();
+    match ron::from_str::<Vec<ScenarioDefinition>>(&content) {
+        Ok(scenarios) => return filter_valid_scenarios(scenarios, &source),
+        Err(_) => {}
     }
 
-    ScenarioCatalog { scenarios: loaded }
+    match ron::from_str::<ScenarioDefinition>(&content) {
+        Ok(scenario) => filter_valid_scenarios(vec![scenario], &source),
+        Err(err) => {
+            eprintln!("Kon scenario's niet parsen ({source}): {err}");
+            Vec::new()
+        }
+    }
+}
+
+fn load_scenarios_from_dir(path: &Path) -> Vec<ScenarioDefinition> {
+    let dir_iter = match fs::read_dir(path) {
+        Ok(entries) => entries,
+        Err(err) => {
+            eprintln!("Kon scenario-map niet lezen ({}): {err}", path.display());
+            return Vec::new();
+        }
+    };
+
+    let mut files = Vec::<PathBuf>::new();
+    for entry in dir_iter {
+        let Ok(entry) = entry else {
+            continue;
+        };
+        let path = entry.path();
+        if path.is_file() && is_ron_file(&path) {
+            files.push(path);
+        }
+    }
+    files.sort();
+
+    let mut scenarios = Vec::new();
+    for file in files {
+        let source = file.display().to_string();
+        let content = match fs::read_to_string(&file) {
+            Ok(content) => content,
+            Err(err) => {
+                eprintln!("Kon scenario-bestand niet lezen ({}): {err}", file.display());
+                continue;
+            }
+        };
+
+        match ron::from_str::<ScenarioDefinition>(&content) {
+            Ok(scenario) => {
+                if scenario.id.trim().is_empty() || scenario.name.trim().is_empty() {
+                    eprintln!("Scenario-bestand ({source}) mist id of naam");
+                    continue;
+                }
+                scenarios.push(scenario);
+            }
+            Err(single_err) => match ron::from_str::<Vec<ScenarioDefinition>>(&content) {
+                Ok(list) => {
+                    eprintln!(
+                        "Scenario-bestand ({source}) bevat een lijst; gebruik bij voorkeur 1 bestand per scenario"
+                    );
+                    scenarios.extend(filter_valid_scenarios(list, &source));
+                }
+                Err(_) => {
+                    eprintln!("Kon scenario-bestand niet parsen ({source}): {single_err}");
+                }
+            },
+        }
+    }
+
+    scenarios
+}
+
+fn load_scenario_catalog(path: &Path) -> ScenarioCatalog {
+    let mut scenarios = if path.exists() {
+        if path.is_dir() {
+            load_scenarios_from_dir(path)
+        } else {
+            load_scenarios_from_file(path)
+        }
+    } else if is_ron_file(path) {
+        if write_default_scenarios_to_file(path) {
+            println!("Scenario-bestand aangemaakt: {}", path.display());
+            load_scenarios_from_file(path)
+        } else {
+            Vec::new()
+        }
+    } else if write_default_scenarios_to_dir(path) {
+        println!("Scenario-map aangemaakt: {}", path.display());
+        load_scenarios_from_dir(path)
+    } else {
+        Vec::new()
+    };
+
+    if scenarios.is_empty() {
+        if path.is_dir() && write_default_scenarios_to_dir(path) {
+            scenarios = load_scenarios_from_dir(path);
+        }
+    }
+
+    if scenarios.is_empty() {
+        eprintln!("Geen geldige scenario's beschikbaar, gebruik ingebouwde fallback.");
+        scenarios = default_scenarios();
+    }
+
+    ScenarioCatalog { scenarios }
 }
 
 fn load_persisted_config() -> PersistedConfig {

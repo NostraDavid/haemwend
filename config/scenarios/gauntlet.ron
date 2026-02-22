@@ -1,0 +1,14 @@
+(
+    id: "gauntlet",
+    name: "Stone Gauntlet",
+    description: "Smalle route met dichte obstakels voor korte, intensieve runs.",
+    ground_extent: 72.0,
+    crate_grid_radius: 5,
+    crate_spacing: 2.2,
+    crate_pattern_mod: 2,
+    wall_count: 11,
+    wall_spacing: 2.1,
+    wall_z: -14.0,
+    tower_z: -20.0,
+    sun_position: (12.0, 18.0, 8.0),
+)

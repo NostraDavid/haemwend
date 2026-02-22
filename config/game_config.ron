@@ -1,0 +1,19 @@
+(
+    settings: (
+        display_mode: Windowed,
+        resolution_width: 1920,
+        resolution_height: 1080,
+        msaa_enabled: true,
+        shadow_mode: Stencil,
+    ),
+    keybinds: (
+        move_forward: "KeyW",
+        move_backward: "KeyS|KeyF|KeyG",
+        strafe_left: "KeyQ",
+        strafe_right: "KeyE",
+        turn_left: "KeyA",
+        turn_right: "KeyF|KeyD",
+        sprint: "ShiftLeft",
+        jump: "Space",
+    ),
+)
