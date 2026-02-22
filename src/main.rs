@@ -1,5 +1,5 @@
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
-use bevy::input::mouse::AccumulatedMouseMotion;
+use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll};
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowResolution};
 use std::time::Duration;
@@ -37,6 +37,7 @@ fn main() {
 struct Player {
     walk_speed: f32,
     sprint_speed: f32,
+    turn_speed: f32,
 }
 
 #[derive(Component)]
@@ -44,7 +45,10 @@ struct ThirdPersonCameraRig {
     yaw: f32,
     pitch: f32,
     look_sensitivity: f32,
+    zoom_sensitivity: f32,
     distance: f32,
+    min_distance: f32,
+    max_distance: f32,
     height: f32,
     focus_height: f32,
 }
@@ -57,6 +61,7 @@ impl Default for Player {
         Self {
             walk_speed: 5.5,
             sprint_speed: 9.5,
+            turn_speed: 2.8,
         }
     }
 }
@@ -67,7 +72,10 @@ impl Default for ThirdPersonCameraRig {
             yaw: 0.0,
             pitch: -0.35,
             look_sensitivity: 0.0025,
+            zoom_sensitivity: 0.35,
             distance: 8.0,
+            min_distance: 2.5,
+            max_distance: 20.0,
             height: 2.0,
             focus_height: 1.1,
         }
@@ -176,7 +184,9 @@ fn setup_world(
             ..default()
         })
         .with_child(Text::new(
-            "W/A/S/D: Move\nShift: Sprint\nHold Right Mouse: Orbit camera",
+            "Tank controls:\nW/S vooruit-achteruit\nQ/E zijwaarts\nA/D draaien\n\
+             Rechtermuisknop ingedrukt:\nA/D/Q/E zijwaarts en character kijkt met camera mee\n\
+             Shift: Sprint\nLMB: camera orbit\nScroll: zoom in/uit",
         ));
 
     commands.spawn((
@@ -193,6 +203,7 @@ fn setup_world(
 
 fn player_move(
     keys: Res<ButtonInput<KeyCode>>,
+    mouse_buttons: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
     camera_query: Query<&ThirdPersonCameraRig, With<Camera3d>>,
     mut player_query: Query<(&mut Transform, &Player)>,
@@ -205,23 +216,32 @@ fn player_move(
         return;
     };
 
-    let yaw_rotation = Quat::from_rotation_y(camera_rig.yaw);
-    let forward = yaw_rotation * -Vec3::Z;
-    let right = yaw_rotation * Vec3::X;
+    let rmb_held = mouse_buttons.pressed(MouseButton::Right);
+    if rmb_held {
+        transform.rotation = Quat::from_rotation_y(camera_rig.yaw);
+    }
 
-    let mut movement = Vec3::ZERO;
-    if keys.pressed(KeyCode::KeyW) {
-        movement += forward;
+    let dt = time.delta_secs();
+    if !rmb_held {
+        let turn_axis = (keys.pressed(KeyCode::KeyD) as i8 - keys.pressed(KeyCode::KeyA) as i8) as f32;
+        if turn_axis != 0.0 {
+            transform.rotate_y(-turn_axis * player.turn_speed * dt);
+        }
     }
-    if keys.pressed(KeyCode::KeyS) {
-        movement -= forward;
-    }
-    if keys.pressed(KeyCode::KeyA) {
-        movement -= right;
-    }
-    if keys.pressed(KeyCode::KeyD) {
-        movement += right;
-    }
+
+    let forward = transform.rotation * -Vec3::Z;
+    let right = transform.rotation * Vec3::X;
+
+    let forward_axis = (keys.pressed(KeyCode::KeyW) as i8 - keys.pressed(KeyCode::KeyS) as i8) as f32;
+    let strafe_axis = if rmb_held {
+        let strafe_right = keys.pressed(KeyCode::KeyE) || keys.pressed(KeyCode::KeyD);
+        let strafe_left = keys.pressed(KeyCode::KeyQ) || keys.pressed(KeyCode::KeyA);
+        (strafe_right as i8 - strafe_left as i8) as f32
+    } else {
+        (keys.pressed(KeyCode::KeyE) as i8 - keys.pressed(KeyCode::KeyQ) as i8) as f32
+    };
+
+    let movement = (forward * forward_axis + right * strafe_axis).normalize_or_zero();
 
     let speed = if keys.pressed(KeyCode::ShiftLeft) {
         player.sprint_speed
@@ -229,17 +249,12 @@ fn player_move(
         player.walk_speed
     };
 
-    let move_dir = movement.normalize_or_zero();
-    transform.translation += move_dir * speed * time.delta_secs();
-
-    if move_dir != Vec3::ZERO {
-        let yaw = move_dir.x.atan2(-move_dir.z);
-        transform.rotation = Quat::from_rotation_y(yaw);
-    }
+    transform.translation += movement * speed * dt;
 }
 
 fn third_person_camera(
     mouse_motion: Res<AccumulatedMouseMotion>,
+    mouse_scroll: Res<AccumulatedMouseScroll>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     player_query: Query<&Transform, (With<Player>, Without<Camera3d>)>,
     mut camera_query: Query<(&mut Transform, &mut ThirdPersonCameraRig), With<Camera3d>>,
@@ -252,12 +267,16 @@ fn third_person_camera(
         return;
     };
 
-    if mouse_buttons.pressed(MouseButton::Right) {
+    let orbit_pressed =
+        mouse_buttons.pressed(MouseButton::Left) || mouse_buttons.pressed(MouseButton::Right);
+    if orbit_pressed {
         let mouse_delta = mouse_motion.delta;
         rig.yaw -= mouse_delta.x * rig.look_sensitivity;
         rig.pitch -= mouse_delta.y * rig.look_sensitivity;
         rig.pitch = rig.pitch.clamp(-1.2, 0.6);
     }
+    rig.distance = (rig.distance - mouse_scroll.delta.y * rig.zoom_sensitivity)
+        .clamp(rig.min_distance, rig.max_distance);
 
     let target = player_transform.translation;
     let rotation = Quat::from_euler(EulerRot::YXZ, rig.yaw, rig.pitch, 0.0);
