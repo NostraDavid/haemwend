@@ -8,11 +8,13 @@ use bevy::window::{
     WindowMode, WindowResolution,
 };
 use serde::{Deserialize, Serialize};
+use std::env;
 use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
 const CONFIG_PATH: &str = "config/game_config.ron";
+const SCENARIOS_PATH_DEFAULT: &str = "config/scenarios.ron";
 const RESOLUTION_OPTIONS: &[(u32, u32)] = &[
     (1280, 720),
     (1600, 900),
@@ -20,6 +22,73 @@ const RESOLUTION_OPTIONS: &[(u32, u32)] = &[
     (2560, 1440),
     (3440, 1440),
 ];
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ScenarioDefinition {
+    id: String,
+    name: String,
+    description: String,
+    ground_extent: f32,
+    crate_grid_radius: i32,
+    crate_spacing: f32,
+    crate_pattern_mod: i32,
+    wall_count: i32,
+    wall_spacing: f32,
+    wall_z: f32,
+    tower_z: f32,
+    sun_position: [f32; 3],
+}
+
+impl ScenarioDefinition {
+    fn sun_vec3(&self) -> Vec3 {
+        Vec3::new(
+            self.sun_position[0],
+            self.sun_position[1],
+            self.sun_position[2],
+        )
+    }
+}
+
+#[derive(Resource, Debug, Clone)]
+struct ScenarioCatalog {
+    scenarios: Vec<ScenarioDefinition>,
+}
+
+impl ScenarioCatalog {
+    fn index_by_id(&self, id: &str) -> Option<usize> {
+        self.scenarios.iter().position(|scenario| scenario.id == id)
+    }
+}
+
+#[derive(Debug, Clone)]
+struct CliOptions {
+    scenario_id: Option<String>,
+    scenarios_file: String,
+}
+
+impl Default for CliOptions {
+    fn default() -> Self {
+        Self {
+            scenario_id: None,
+            scenarios_file: SCENARIOS_PATH_DEFAULT.to_string(),
+        }
+    }
+}
+
+#[derive(Resource, Debug)]
+struct GameFlowState {
+    in_game: bool,
+    pending_scenario: Option<usize>,
+}
+
+impl Default for GameFlowState {
+    fn default() -> Self {
+        Self {
+            in_game: false,
+            pending_scenario: None,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 enum DisplayModeSetting {
@@ -377,8 +446,23 @@ struct BakedShadow;
 #[derive(Component)]
 struct MenuRoot;
 
+#[derive(Component)]
+struct StartMenuRoot;
+
+#[derive(Component)]
+struct StartMenuCamera;
+
 #[derive(Component, Clone, Copy)]
 struct MenuButton(MenuButtonAction);
+
+#[derive(Component, Clone, Copy)]
+struct StartMenuButton(StartMenuButtonAction);
+
+#[derive(Clone, Copy)]
+enum StartMenuButtonAction {
+    StartScenario(usize),
+    ExitGame,
+}
 
 #[derive(Clone, Copy)]
 enum MenuButtonAction {
@@ -441,6 +525,29 @@ impl Default for ThirdPersonCameraRig {
 }
 
 fn main() {
+    let cli = parse_cli_options();
+    let scenario_catalog = load_scenario_catalog(Path::new(&cli.scenarios_file));
+    let pending_scenario = if let Some(requested_id) = cli.scenario_id.as_deref() {
+        match scenario_catalog.index_by_id(requested_id) {
+            Some(index) => Some(index),
+            None => {
+                let available = scenario_catalog
+                    .scenarios
+                    .iter()
+                    .map(|scenario| scenario.id.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                eprintln!(
+                    "Scenario '{}' niet gevonden. Beschikbaar: {}",
+                    requested_id, available
+                );
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     let persisted = load_persisted_config();
     let initial_settings = persisted.settings;
     let initial_keybinds = persisted.keybinds.to_runtime();
@@ -464,6 +571,11 @@ fn main() {
         ))
         .insert_resource(initial_settings)
         .insert_resource(initial_keybinds)
+        .insert_resource(GameFlowState {
+            in_game: false,
+            pending_scenario,
+        })
+        .insert_resource(scenario_catalog)
         .insert_resource(MenuState::default())
         .insert_resource(MouseLookCaptureState::default())
         .insert_resource(ClearColor(Color::srgb(0.57, 0.70, 0.92)))
@@ -472,7 +584,8 @@ fn main() {
             brightness: 135.0,
             affects_lightmapped_meshes: true,
         })
-        .add_systems(Startup, setup_world)
+        .add_systems(Startup, setup_start_menu)
+        .add_systems(Update, (handle_start_menu_buttons, load_pending_scenario).chain())
         .add_systems(
             Update,
             (
@@ -496,11 +609,167 @@ fn main() {
         .run();
 }
 
-fn setup_world(
+fn setup_start_menu(
     mut commands: Commands,
+    flow: Res<GameFlowState>,
+    scenarios: Res<ScenarioCatalog>,
+) {
+    if flow.pending_scenario.is_none() {
+        commands.spawn((Camera2d, StartMenuCamera));
+        spawn_start_menu_ui(&mut commands, &scenarios);
+    }
+}
+
+fn spawn_start_menu_ui(commands: &mut Commands, scenarios: &ScenarioCatalog) {
+    commands
+        .spawn((
+            StartMenuRoot,
+            GlobalZIndex(700),
+            Node {
+                position_type: PositionType::Absolute,
+                width: percent(100),
+                height: percent(100),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.03, 0.04, 0.06, 0.94)),
+        ))
+        .with_children(|root| {
+            root.spawn((
+                Node {
+                    width: px(620),
+                    padding: UiRect::all(px(22)),
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
+                BackgroundColor(Color::srgb(0.11, 0.13, 0.17)),
+            ))
+            .with_children(|panel| {
+                panel.spawn((
+                    Text::new("Selecteer Scenario"),
+                    Node {
+                        margin: UiRect::bottom(px(12)),
+                        ..default()
+                    },
+                ));
+
+                for (index, scenario) in scenarios.scenarios.iter().enumerate() {
+                    panel.spawn((
+                        Text::new(format!("{}: {}", scenario.name, scenario.description)),
+                        Node {
+                            margin: UiRect::bottom(px(6)),
+                            ..default()
+                        },
+                    ));
+
+                    panel
+                        .spawn((
+                            Button,
+                            StartMenuButton(StartMenuButtonAction::StartScenario(index)),
+                            menu_button_node(),
+                            menu_button_normal_color(),
+                        ))
+                        .with_child(Text::new(format!("Start {}", scenario.name)));
+                }
+
+                panel
+                    .spawn((
+                        Button,
+                        StartMenuButton(StartMenuButtonAction::ExitGame),
+                        menu_button_node(),
+                        menu_button_normal_color(),
+                    ))
+                    .with_child(Text::new("Exit"));
+            });
+        });
+}
+
+fn handle_start_menu_buttons(
+    mut interactions: Query<
+        (&Interaction, &StartMenuButton, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut flow: ResMut<GameFlowState>,
+    mut app_exit: MessageWriter<AppExit>,
+) {
+    if flow.in_game {
+        return;
+    }
+
+    for (interaction, button, mut background) in &mut interactions {
+        match *interaction {
+            Interaction::Pressed => {
+                *background = menu_button_pressed_color();
+                match button.0 {
+                    StartMenuButtonAction::StartScenario(scenario) => {
+                        flow.pending_scenario = Some(scenario);
+                    }
+                    StartMenuButtonAction::ExitGame => {
+                        app_exit.write(AppExit::Success);
+                    }
+                }
+            }
+            Interaction::Hovered => {
+                *background = menu_button_hover_color();
+            }
+            Interaction::None => {
+                *background = menu_button_normal_color();
+            }
+        }
+    }
+}
+
+fn load_pending_scenario(
+    mut commands: Commands,
+    mut flow: ResMut<GameFlowState>,
+    scenarios: Res<ScenarioCatalog>,
+    mut menu: ResMut<MenuState>,
+    start_menu_roots: Query<Entity, With<StartMenuRoot>>,
+    start_menu_cameras: Query<Entity, With<StartMenuCamera>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    let Some(scenario_index) = flow.pending_scenario.take() else {
+        return;
+    };
+    let Some(scenario) = scenarios.scenarios.get(scenario_index).cloned() else {
+        eprintln!("Scenario index {} is ongeldig", scenario_index);
+        return;
+    };
+
+    for root in &start_menu_roots {
+        commands.entity(root).despawn();
+    }
+    for camera in &start_menu_cameras {
+        commands.entity(camera).despawn();
+    }
+
+    menu.open = false;
+    menu.screen = MenuScreen::Main;
+    menu.awaiting_rebind = None;
+    menu.dirty = false;
+
+    spawn_scenario_world(&mut commands, &mut meshes, &mut materials, &scenario);
+    flow.in_game = true;
+}
+
+fn spawn_scenario_world(
+    commands: &mut Commands,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<StandardMaterial>,
+    scenario: &ScenarioDefinition,
+) {
+    let ground_extent = scenario.ground_extent;
+    let crate_grid_radius = scenario.crate_grid_radius;
+    let crate_spacing = scenario.crate_spacing;
+    let crate_pattern_mod = scenario.crate_pattern_mod.max(1);
+    let wall_count = scenario.wall_count;
+    let wall_spacing = scenario.wall_spacing;
+    let wall_z = scenario.wall_z;
+    let tower_z = scenario.tower_z;
+    let sun_position = scenario.sun_vec3();
+
     let player_mesh = meshes.add(Cuboid::new(0.8, 1.8, 0.8));
     let player_mat = materials.add(StandardMaterial {
         base_color: Color::srgb(0.91, 0.84, 0.64),
@@ -570,10 +839,10 @@ fn setup_world(
             illuminance: 12_500.0,
             ..default()
         },
-        Transform::from_xyz(18.0, 24.0, 12.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_translation(sun_position).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
-    let ground_mesh = meshes.add(Cuboid::new(120.0, 0.1, 120.0));
+    let ground_mesh = meshes.add(Cuboid::new(ground_extent, 0.1, ground_extent));
     let ground_mat = materials.add(StandardMaterial {
         base_color: Color::srgb(0.22, 0.43, 0.20),
         perceptual_roughness: 1.0,
@@ -585,7 +854,7 @@ fn setup_world(
         MeshMaterial3d(ground_mat),
         Transform::from_xyz(0.0, -0.05, 0.0),
         WorldCollider {
-            half_extents: Vec3::new(60.0, 0.05, 60.0),
+            half_extents: Vec3::new(ground_extent * 0.5, 0.05, ground_extent * 0.5),
         },
     ));
 
@@ -610,45 +879,49 @@ fn setup_world(
         ..default()
     });
 
-    for x in -8..=8 {
-        for z in -8..=8 {
+    for x in -crate_grid_radius..=crate_grid_radius {
+        for z in -crate_grid_radius..=crate_grid_radius {
             let near_spawn = (-1..=1).contains(&x) && (-1..=1).contains(&z);
-            if (x + z) % 4 == 0 && !near_spawn {
+            if (x + z).rem_euclid(crate_pattern_mod) == 0 && !near_spawn {
                 commands.spawn((
                     Mesh3d(crate_mesh.clone()),
                     MeshMaterial3d(crate_mat.clone()),
-                    Transform::from_xyz(x as f32 * 3.0, 0.5, z as f32 * 3.0),
+                    Transform::from_xyz(x as f32 * crate_spacing, 0.5, z as f32 * crate_spacing),
                     NotShadowCaster,
                     WorldCollider {
                         half_extents: Vec3::splat(0.5),
                     },
                 ));
                 spawn_baked_shadow(
-                    &mut commands,
+                    commands,
                     &baked_shadow_mesh,
                     &baked_shadow_mat,
-                    Vec3::new(x as f32 * 3.0, 0.011, z as f32 * 3.0),
+                    Vec3::new(
+                        x as f32 * crate_spacing,
+                        0.011,
+                        z as f32 * crate_spacing,
+                    ),
                     Vec2::new(1.25, 1.25),
                 );
             }
         }
     }
 
-    for i in -5..=5 {
+    for i in -wall_count..=wall_count {
         commands.spawn((
             Mesh3d(wall_mesh.clone()),
             MeshMaterial3d(wall_mat.clone()),
-            Transform::from_xyz(i as f32 * 3.2, 1.5, -20.0),
+            Transform::from_xyz(i as f32 * wall_spacing, 1.5, wall_z),
             NotShadowCaster,
             WorldCollider {
                 half_extents: Vec3::splat(1.5),
             },
         ));
         spawn_baked_shadow(
-            &mut commands,
+            commands,
             &baked_shadow_mesh,
             &baked_shadow_mat,
-            Vec3::new(i as f32 * 3.2, 0.011, -20.0),
+            Vec3::new(i as f32 * wall_spacing, 0.011, wall_z),
             Vec2::new(3.4, 3.0),
         );
     }
@@ -656,17 +929,17 @@ fn setup_world(
     commands.spawn((
         Mesh3d(tower_mesh),
         MeshMaterial3d(tower_mat),
-        Transform::from_xyz(0.0, 4.0, -30.0),
+        Transform::from_xyz(0.0, 4.0, tower_z),
         NotShadowCaster,
         WorldCollider {
             half_extents: Vec3::new(2.0, 4.0, 2.0),
         },
     ));
     spawn_baked_shadow(
-        &mut commands,
+        commands,
         &baked_shadow_mesh,
         &baked_shadow_mat,
-        Vec3::new(0.0, 0.011, -30.0),
+        Vec3::new(0.0, 0.011, tower_z),
         Vec2::new(5.0, 5.0),
     );
 
@@ -678,7 +951,10 @@ fn setup_world(
             ..default()
         })
         .with_child(Text::new(
-            "ESC: menu\nLMB: camera orbit\nRMB: aim-move mode\nScroll: zoom\n\nKeybinds zijn aanpasbaar in het menu.",
+            format!(
+                "Scenario: {}\nESC: menu\nLMB: camera orbit\nRMB: aim-move mode\nScroll: zoom\n\nKeybinds zijn aanpasbaar in het menu.",
+                scenario.name
+            ),
         ));
 
     commands.spawn((
@@ -693,7 +969,15 @@ fn setup_world(
     ));
 }
 
-fn toggle_menu_on_escape(keys: Res<ButtonInput<KeyCode>>, mut menu: ResMut<MenuState>) {
+fn toggle_menu_on_escape(
+    keys: Res<ButtonInput<KeyCode>>,
+    flow: Res<GameFlowState>,
+    mut menu: ResMut<MenuState>,
+) {
+    if !flow.in_game {
+        return;
+    }
+
     if !keys.just_pressed(KeyCode::Escape) {
         return;
     }
@@ -1135,8 +1419,8 @@ fn rebuild_menu_ui(
 fn apply_runtime_settings(
     settings: Res<GameSettings>,
     primary_window: Single<&mut Window, With<PrimaryWindow>>,
-    camera_entity: Single<Entity, With<Camera3d>>,
-    player_entity: Single<(Entity, Has<NotShadowCaster>), With<Player>>,
+    camera_entities: Query<Entity, With<Camera3d>>,
+    player_entities: Query<(Entity, Has<NotShadowCaster>), With<Player>>,
     mut lights: Query<&mut DirectionalLight>,
     mut blob_visibility: Query<&mut Visibility, (With<PlayerBlobShadow>, Without<BakedShadow>)>,
     mut baked_visibility: Query<&mut Visibility, (With<BakedShadow>, Without<PlayerBlobShadow>)>,
@@ -1152,11 +1436,12 @@ fn apply_runtime_settings(
         .resolution
         .set(settings.resolution_width as f32, settings.resolution_height as f32);
 
-    let camera = *camera_entity;
-    if settings.msaa_enabled {
-        commands.entity(camera).insert(Msaa::Sample4);
-    } else {
-        commands.entity(camera).insert(Msaa::Off);
+    if let Ok(camera) = camera_entities.single() {
+        if settings.msaa_enabled {
+            commands.entity(camera).insert(Msaa::Sample4);
+        } else {
+            commands.entity(camera).insert(Msaa::Off);
+        }
     }
 
     let stencil_mode = settings.shadow_mode == ShadowModeSetting::Stencil;
@@ -1181,13 +1466,14 @@ fn apply_runtime_settings(
         };
     }
 
-    let (player, has_not_shadow_caster) = *player_entity;
-    if stencil_mode {
-        if has_not_shadow_caster {
-            commands.entity(player).remove::<NotShadowCaster>();
+    if let Ok((player, has_not_shadow_caster)) = player_entities.single() {
+        if stencil_mode {
+            if has_not_shadow_caster {
+                commands.entity(player).remove::<NotShadowCaster>();
+            }
+        } else if !has_not_shadow_caster {
+            commands.entity(player).insert(NotShadowCaster);
         }
-    } else if !has_not_shadow_caster {
-        commands.entity(player).insert(NotShadowCaster);
     }
 }
 
@@ -1425,6 +1711,7 @@ fn update_performance_overlay(
 }
 
 fn sync_mouse_capture_with_focus(
+    flow: Res<GameFlowState>,
     menu: Res<MenuState>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     mut mouse_capture_state: ResMut<MouseLookCaptureState>,
@@ -1434,7 +1721,7 @@ fn sync_mouse_capture_with_focus(
     let look_held =
         mouse_buttons.pressed(MouseButton::Left) || mouse_buttons.pressed(MouseButton::Right);
 
-    if window.focused && !menu.open {
+    if window.focused && flow.in_game && !menu.open {
         if look_held {
             if !mouse_capture_state.active {
                 mouse_capture_state.restore_position = window.cursor_position();
@@ -1586,6 +1873,153 @@ fn intersects_aabb(a_center: Vec3, a_half_extents: Vec3, b_center: Vec3, b_half_
     (a_center.x - b_center.x).abs() < (a_half_extents.x + b_half_extents.x)
         && (a_center.y - b_center.y).abs() < (a_half_extents.y + b_half_extents.y)
         && (a_center.z - b_center.z).abs() < (a_half_extents.z + b_half_extents.z)
+}
+
+fn parse_cli_options() -> CliOptions {
+    let mut options = CliOptions::default();
+    let mut args = env::args().skip(1);
+
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--scenario" | "-s" => {
+                let Some(value) = args.next() else {
+                    eprintln!("--scenario verwacht een scenario-id");
+                    print_cli_help_and_exit(2);
+                };
+                options.scenario_id = Some(value);
+            }
+            "--scenarios-file" => {
+                let Some(value) = args.next() else {
+                    eprintln!("--scenarios-file verwacht een pad");
+                    print_cli_help_and_exit(2);
+                };
+                options.scenarios_file = value;
+            }
+            "--help" | "-h" => {
+                print_cli_help_and_exit(0);
+            }
+            _ => {
+                eprintln!("Onbekende optie: {arg}");
+                print_cli_help_and_exit(2);
+            }
+        }
+    }
+
+    options
+}
+
+fn print_cli_help_and_exit(code: i32) -> ! {
+    println!(
+        "Gebruik:\n  haemwend [opties]\n\nOpties:\n  -s, --scenario <id>        Start direct met scenario-id\n      --scenarios-file <pad> Scenario-definities (RON)\n  -h, --help                 Toon hulp"
+    );
+    std::process::exit(code);
+}
+
+fn default_scenarios() -> Vec<ScenarioDefinition> {
+    vec![
+        ScenarioDefinition {
+            id: "greenwood".to_string(),
+            name: "Greenwood Valley".to_string(),
+            description: "Open veld met verspreide kratten en muursegmenten.".to_string(),
+            ground_extent: 120.0,
+            crate_grid_radius: 8,
+            crate_spacing: 3.0,
+            crate_pattern_mod: 4,
+            wall_count: 5,
+            wall_spacing: 3.2,
+            wall_z: -20.0,
+            tower_z: -30.0,
+            sun_position: [18.0, 24.0, 12.0],
+        },
+        ScenarioDefinition {
+            id: "arena".to_string(),
+            name: "Iron Arena".to_string(),
+            description: "Compacte arena met dichter op elkaar staande obstakels.".to_string(),
+            ground_extent: 80.0,
+            crate_grid_radius: 6,
+            crate_spacing: 2.6,
+            crate_pattern_mod: 3,
+            wall_count: 7,
+            wall_spacing: 2.6,
+            wall_z: -16.0,
+            tower_z: -24.0,
+            sun_position: [14.0, 20.0, 10.0],
+        },
+        ScenarioDefinition {
+            id: "canyon".to_string(),
+            name: "Red Canyon".to_string(),
+            description: "Langgerekte map met pilaren en sterke dieptewerking.".to_string(),
+            ground_extent: 180.0,
+            crate_grid_radius: 10,
+            crate_spacing: 3.4,
+            crate_pattern_mod: 5,
+            wall_count: 9,
+            wall_spacing: 3.5,
+            wall_z: -30.0,
+            tower_z: -42.0,
+            sun_position: [22.0, 30.0, 14.0],
+        },
+    ]
+}
+
+fn write_scenario_catalog(path: &Path, scenarios: &[ScenarioDefinition]) {
+    if let Some(parent) = path.parent() {
+        if let Err(err) = fs::create_dir_all(parent) {
+            eprintln!("Kon scenario-map niet maken ({}): {err}", parent.display());
+            return;
+        }
+    }
+
+    let serialized = match ron::ser::to_string_pretty(scenarios, ron::ser::PrettyConfig::default()) {
+        Ok(content) => content,
+        Err(err) => {
+            eprintln!("Kon scenario's niet serialiseren: {err}");
+            return;
+        }
+    };
+
+    if let Err(err) = fs::write(path, serialized) {
+        eprintln!("Kon scenario's niet opslaan ({}): {err}", path.display());
+    }
+}
+
+fn load_scenario_catalog(path: &Path) -> ScenarioCatalog {
+    if !path.exists() {
+        let defaults = default_scenarios();
+        write_scenario_catalog(path, &defaults);
+        return ScenarioCatalog { scenarios: defaults };
+    }
+
+    let content = match fs::read_to_string(path) {
+        Ok(content) => content,
+        Err(err) => {
+            eprintln!("Kon scenario-bestand niet lezen ({}): {err}", path.display());
+            return ScenarioCatalog {
+                scenarios: default_scenarios(),
+            };
+        }
+    };
+
+    let mut loaded = match ron::from_str::<Vec<ScenarioDefinition>>(&content) {
+        Ok(scenarios) => scenarios,
+        Err(err) => {
+            eprintln!("Kon scenario's niet parsen ({}): {err}", path.display());
+            return ScenarioCatalog {
+                scenarios: default_scenarios(),
+            };
+        }
+    };
+
+    loaded.retain(|scenario| !scenario.id.trim().is_empty() && !scenario.name.trim().is_empty());
+    if loaded.is_empty() {
+        eprintln!(
+            "Scenario-bestand ({}) bevat geen geldige scenario's, gebruik defaults",
+            path.display()
+        );
+        loaded = default_scenarios();
+    }
+
+    ScenarioCatalog { scenarios: loaded }
 }
 
 fn load_persisted_config() -> PersistedConfig {
