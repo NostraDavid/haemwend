@@ -37,6 +37,15 @@
             rustToolchain
             pkgs.pkg-config
             pkgs.openssl
+            pkgs.alsa-lib
+            pkgs.udev
+            pkgs.vulkan-loader
+            pkgs.wayland
+            pkgs.libxkbcommon
+            pkgs.libx11
+            pkgs.libxcursor
+            pkgs.libxi
+            pkgs.libxrandr
           ];
 
           RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
