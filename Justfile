@@ -36,6 +36,11 @@ ci:
   cargo clippy --all-targets --all-features -- -D warnings
   cargo test
 
+# clean local git object/lfs cache to shrink .git size
+git-clean:
+  git gc --prune=now
+  git lfs prune
+
 perf output="perf_results.csv" repeats="3" warmup="1":
   cargo run --release --bin perf_scenarios -- --scenario-file perf/scenarios.ron --output {{output}} --warmup {{warmup}} --repeats {{repeats}}
 
