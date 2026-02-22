@@ -337,6 +337,12 @@ impl Default for MenuState {
     }
 }
 
+#[derive(Resource, Debug, Default)]
+struct MouseLookCaptureState {
+    active: bool,
+    restore_position: Option<Vec2>,
+}
+
 #[derive(Component)]
 struct Player {
     walk_speed: f32,
@@ -459,6 +465,7 @@ fn main() {
         .insert_resource(initial_settings)
         .insert_resource(initial_keybinds)
         .insert_resource(MenuState::default())
+        .insert_resource(MouseLookCaptureState::default())
         .insert_resource(ClearColor(Color::srgb(0.57, 0.70, 0.92)))
         .insert_resource(GlobalAmbientLight {
             color: Color::srgb(0.56, 0.61, 0.67),
@@ -1419,13 +1426,35 @@ fn update_performance_overlay(
 
 fn sync_mouse_capture_with_focus(
     menu: Res<MenuState>,
-    window_query: Single<(&Window, &mut CursorOptions), With<PrimaryWindow>>,
+    mouse_buttons: Res<ButtonInput<MouseButton>>,
+    mut mouse_capture_state: ResMut<MouseLookCaptureState>,
+    window_query: Single<(&mut Window, &mut CursorOptions), With<PrimaryWindow>>,
 ) {
-    let (window, mut cursor_options) = window_query.into_inner();
+    let (mut window, mut cursor_options) = window_query.into_inner();
+    let look_held =
+        mouse_buttons.pressed(MouseButton::Left) || mouse_buttons.pressed(MouseButton::Right);
+
     if window.focused && !menu.open {
-        cursor_options.visible = false;
-        cursor_options.grab_mode = CursorGrabMode::Locked;
+        if look_held {
+            if !mouse_capture_state.active {
+                mouse_capture_state.restore_position = window.cursor_position();
+                mouse_capture_state.active = true;
+            }
+            cursor_options.visible = false;
+            cursor_options.grab_mode = CursorGrabMode::Locked;
+        } else {
+            if mouse_capture_state.active {
+                if let Some(position) = mouse_capture_state.restore_position.take() {
+                    window.set_cursor_position(Some(position));
+                }
+                mouse_capture_state.active = false;
+            }
+            cursor_options.visible = true;
+            cursor_options.grab_mode = CursorGrabMode::Confined;
+        }
     } else {
+        mouse_capture_state.active = false;
+        mouse_capture_state.restore_position = None;
         cursor_options.visible = true;
         cursor_options.grab_mode = CursorGrabMode::None;
     }
