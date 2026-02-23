@@ -113,6 +113,7 @@ pub fn run() {
                 .chain()
                 .after(rebuild_menu_ui),
         )
+        .add_systems(Update, billboard_stair_labels.after(third_person_camera))
         .add_systems(Update, update_performance_overlay)
         .add_systems(Update, draw_debug_geometry)
         .run();

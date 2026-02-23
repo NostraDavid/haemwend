@@ -76,6 +76,9 @@ pub(super) struct MenuRoot;
 pub(super) struct InGameEntity;
 
 #[derive(Component)]
+pub(super) struct StairSteepnessLabel;
+
+#[derive(Component)]
 pub(super) struct StartMenuRoot;
 
 #[derive(Component)]

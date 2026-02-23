@@ -402,6 +402,80 @@ pub(super) fn spawn_scenario_world(
             center: table_collider_center,
             half_extents: table_collider_half,
         });
+
+        // Add 5 stair variants with different steepness for controller testing.
+        // (rise/run): from shallow to steep.
+        let stair_profiles = [
+            (0.16_f32, 1.05_f32),
+            (0.20_f32, 0.92_f32),
+            (0.24_f32, 0.80_f32),
+            (0.30_f32, 0.72_f32),
+            (0.36_f32, 0.64_f32),
+        ];
+        let stair_width = 2.2_f32;
+        let stair_depth = 0.82_f32;
+        let stairs_per_profile = 5;
+        let base_x = -18.0_f32;
+        let lane_spacing = 4.5_f32;
+        let base_z = 8.0_f32;
+        let stair_colors = [
+            Color::srgb(0.52, 0.58, 0.62),
+            Color::srgb(0.56, 0.57, 0.49),
+            Color::srgb(0.58, 0.52, 0.48),
+            Color::srgb(0.52, 0.50, 0.58),
+            Color::srgb(0.60, 0.50, 0.42),
+        ];
+
+        for (lane_idx, (stair_rise, stair_run)) in stair_profiles.into_iter().enumerate() {
+            let lane_x = base_x + lane_spacing * lane_idx as f32;
+            let stair_mesh = meshes.add(Cuboid::new(stair_width, stair_rise, stair_depth));
+            let stair_mat = materials.add(StandardMaterial {
+                base_color: stair_colors[lane_idx % stair_colors.len()],
+                perceptual_roughness: 0.94,
+                ..default()
+            });
+
+            commands.spawn((
+                StairSteepnessLabel,
+                InGameEntity,
+                Text2d::new(format!("rise {:.2}\nrun {:.2}", stair_rise, stair_run)),
+                TextLayout::new_with_justify(Justify::Center),
+                TextFont::from_font_size(26.0),
+                TextColor(Color::srgb(0.96, 0.96, 0.94)),
+                TextBackgroundColor(Color::srgba(0.08, 0.10, 0.12, 0.68)),
+                Transform::from_xyz(lane_x, 0.38, base_z - 0.55).with_scale(Vec3::splat(0.018)),
+            ));
+
+            for step in 0..stairs_per_profile {
+                let idx = step as f32;
+                let center = Vec3::new(
+                    lane_x,
+                    stair_rise * 0.5 + idx * stair_rise,
+                    base_z + idx * stair_run + stair_depth * 0.5,
+                );
+                let half = Vec3::new(stair_width * 0.5, stair_rise * 0.5, stair_depth * 0.5);
+
+                commands.spawn((
+                    Mesh3d(stair_mesh.clone()),
+                    MeshMaterial3d(stair_mat.clone()),
+                    Transform::from_translation(center),
+                    NotShadowCaster,
+                    WorldCollider { half_extents: half },
+                    InGameEntity,
+                ));
+                static_colliders.push(StaticCollider {
+                    center,
+                    half_extents: half,
+                });
+                spawn_baked_shadow(
+                    commands,
+                    &baked_shadow_mesh,
+                    &baked_shadow_mat,
+                    Vec3::new(center.x, 0.011, center.z),
+                    Vec2::new(stair_width * 1.05, stair_depth * 1.15),
+                );
+            }
+        }
     }
 
     commands.insert_resource(WorldCollisionGrid::from_colliders(static_colliders, 4.0));

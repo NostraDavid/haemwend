@@ -1,5 +1,10 @@
 use super::*;
 
+const CONTROLLER_MAX_SLIDES: usize = 4;
+const CONTROLLER_SKIN: f32 = 0.02;
+const CONTROLLER_STEP_HEIGHT: f32 = 0.35;
+const CONTROLLER_STEP_DROP: f32 = 0.25;
+
 pub(super) fn player_move(
     keys: Res<ButtonInput<KeyCode>>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
@@ -72,26 +77,28 @@ pub(super) fn player_move(
     let desired_delta = movement * speed * dt;
 
     let mut next_position = transform.translation;
+    let (slid_position, blocked) = move_with_slide(
+        next_position,
+        desired_delta,
+        *player_collider,
+        &world_collision_grid,
+        CONTROLLER_MAX_SLIDES,
+        CONTROLLER_SKIN,
+    );
+    next_position.x = slid_position.x;
+    next_position.z = slid_position.z;
 
-    if desired_delta.x != 0.0 {
-        let candidate = Vec3::new(
-            next_position.x + desired_delta.x,
-            next_position.y,
-            next_position.z,
-        );
-        if !would_collide(candidate, *player_collider, &world_collision_grid) {
-            next_position.x = candidate.x;
-        }
-    }
-
-    if desired_delta.z != 0.0 {
-        let candidate = Vec3::new(
-            next_position.x,
-            next_position.y,
-            next_position.z + desired_delta.z,
-        );
-        if !would_collide(candidate, *player_collider, &world_collision_grid) {
-            next_position.z = candidate.z;
+    if blocked && kinematics.grounded {
+        if let Some(step_position) = try_step_move(
+            transform.translation,
+            desired_delta,
+            *player_collider,
+            &world_collision_grid,
+            CONTROLLER_STEP_HEIGHT,
+            CONTROLLER_STEP_DROP,
+            CONTROLLER_SKIN,
+        ) {
+            next_position = step_position;
         }
     }
 
@@ -139,6 +146,252 @@ pub(super) fn player_move(
     transform.translation = next_position;
 }
 
+fn move_with_slide(
+    start: Vec3,
+    displacement: Vec3,
+    collider: PlayerCollider,
+    grid: &WorldCollisionGrid,
+    max_iterations: usize,
+    skin: f32,
+) -> (Vec3, bool) {
+    let mut position = start;
+    let mut remaining = Vec2::new(displacement.x, displacement.z);
+    let mut blocked = false;
+
+    for _ in 0..max_iterations {
+        let remaining_len = remaining.length();
+        if remaining_len <= 1e-6 {
+            break;
+        }
+
+        let mut best_hit_t = f32::INFINITY;
+        let mut best_normal = Vec2::ZERO;
+        let query_radius = collider.radius + remaining_len + skin + 0.1;
+
+        grid.query_nearby(position, query_radius, |static_collider| {
+            let feet_y = position.y - collider.half_height;
+            let collider_top = static_collider.center.y + static_collider.half_extents.y;
+
+            // Treat current support surfaces as floor, not as side blockers.
+            // Without this, walking off an edge can get stuck on the same step's "wall".
+            if feet_y >= collider_top - skin {
+                return;
+            }
+
+            if !capsule_overlaps_aabb_vertically(
+                position.y,
+                collider,
+                static_collider.center.y,
+                static_collider.half_extents.y,
+                skin * 0.25,
+            ) {
+                return;
+            }
+
+            if let Some((toi, normal)) = sweep_disc_against_aabb_xz(
+                Vec2::new(position.x, position.z),
+                remaining,
+                collider.radius + skin,
+                Vec2::new(static_collider.center.x, static_collider.center.z),
+                Vec2::new(
+                    static_collider.half_extents.x,
+                    static_collider.half_extents.z,
+                ),
+            ) {
+                if toi < best_hit_t {
+                    best_hit_t = toi;
+                    best_normal = normal;
+                }
+            }
+        });
+
+        if !best_hit_t.is_finite() {
+            position.x += remaining.x;
+            position.z += remaining.y;
+            break;
+        }
+
+        blocked = true;
+        let move_t = (best_hit_t - 0.001).clamp(0.0, 1.0);
+        position.x += remaining.x * move_t;
+        position.z += remaining.y * move_t;
+
+        let mut leftover = remaining * (1.0 - best_hit_t.clamp(0.0, 1.0));
+        let into_wall = leftover.dot(best_normal);
+        if into_wall < 0.0 {
+            leftover -= best_normal * into_wall;
+        }
+        remaining = leftover;
+    }
+
+    (position, blocked)
+}
+
+fn try_step_move(
+    start: Vec3,
+    displacement: Vec3,
+    collider: PlayerCollider,
+    grid: &WorldCollisionGrid,
+    step_height: f32,
+    max_drop: f32,
+    skin: f32,
+) -> Option<Vec3> {
+    let horizontal_delta = Vec2::new(displacement.x, displacement.z);
+    if horizontal_delta.length_squared() < 1e-6 {
+        return None;
+    }
+
+    let raised = start + Vec3::Y * step_height;
+    if would_collide(raised, collider, grid) {
+        return None;
+    }
+
+    let (raised_moved, _) = move_with_slide(
+        raised,
+        displacement,
+        collider,
+        grid,
+        CONTROLLER_MAX_SLIDES,
+        skin,
+    );
+
+    let moved_dist = Vec2::new(raised_moved.x - start.x, raised_moved.z - start.z).length();
+    if moved_dist < 0.02 {
+        return None;
+    }
+
+    let mut best_top: Option<f32> = None;
+    grid.query_nearby(raised_moved, collider.radius + 0.1, |static_collider| {
+        if !intersects_disc_aabb_xz(
+            raised_moved,
+            collider.radius,
+            static_collider.center,
+            static_collider.half_extents,
+        ) {
+            return;
+        }
+
+        let top = static_collider.center.y + static_collider.half_extents.y;
+        let center_after_snap = top + collider.half_height;
+        let drop = raised_moved.y - center_after_snap;
+        if drop < -skin || drop > step_height + max_drop {
+            return;
+        }
+
+        best_top = Some(best_top.map_or(top, |current| current.max(top)));
+    });
+
+    let top = best_top?;
+    let snapped = Vec3::new(raised_moved.x, top + collider.half_height, raised_moved.z);
+    if would_collide(snapped, collider, grid) {
+        return None;
+    }
+
+    Some(snapped)
+}
+
+fn capsule_overlaps_aabb_vertically(
+    capsule_center_y: f32,
+    capsule: PlayerCollider,
+    box_center_y: f32,
+    box_half_y: f32,
+    extra_margin: f32,
+) -> bool {
+    let box_min = box_center_y - box_half_y;
+    let box_max = box_center_y + box_half_y;
+    let capsule_min = capsule_center_y - capsule.half_height;
+    let capsule_max = capsule_center_y + capsule.half_height;
+
+    capsule_min < box_max - extra_margin && capsule_max > box_min + extra_margin
+}
+
+fn sweep_disc_against_aabb_xz(
+    origin: Vec2,
+    delta: Vec2,
+    radius: f32,
+    box_center: Vec2,
+    box_half: Vec2,
+) -> Option<(f32, Vec2)> {
+    let expanded_min = box_center - box_half - Vec2::splat(radius);
+    let expanded_max = box_center + box_half + Vec2::splat(radius);
+
+    if origin.x >= expanded_min.x
+        && origin.x <= expanded_max.x
+        && origin.y >= expanded_min.y
+        && origin.y <= expanded_max.y
+    {
+        let left = (origin.x - expanded_min.x).abs();
+        let right = (expanded_max.x - origin.x).abs();
+        let down = (origin.y - expanded_min.y).abs();
+        let up = (expanded_max.y - origin.y).abs();
+        let min_side = left.min(right).min(down).min(up);
+
+        let normal = if min_side == left {
+            Vec2::new(-1.0, 0.0)
+        } else if min_side == right {
+            Vec2::new(1.0, 0.0)
+        } else if min_side == down {
+            Vec2::new(0.0, -1.0)
+        } else {
+            Vec2::new(0.0, 1.0)
+        };
+        return Some((0.0, normal));
+    }
+
+    let mut t_min: f32 = 0.0;
+    let mut t_max: f32 = 1.0;
+    let mut hit_normal = Vec2::ZERO;
+
+    for axis in 0..2 {
+        let (o, d, min_v, max_v) = if axis == 0 {
+            (origin.x, delta.x, expanded_min.x, expanded_max.x)
+        } else {
+            (origin.y, delta.y, expanded_min.y, expanded_max.y)
+        };
+
+        if d.abs() <= 1e-8 {
+            if o < min_v || o > max_v {
+                return None;
+            }
+            continue;
+        }
+
+        let inv = 1.0 / d;
+        let mut t1 = (min_v - o) * inv;
+        let mut t2 = (max_v - o) * inv;
+        let n = if axis == 0 {
+            if d > 0.0 {
+                Vec2::new(-1.0, 0.0)
+            } else {
+                Vec2::new(1.0, 0.0)
+            }
+        } else if d > 0.0 {
+            Vec2::new(0.0, -1.0)
+        } else {
+            Vec2::new(0.0, 1.0)
+        };
+
+        if t1 > t2 {
+            std::mem::swap(&mut t1, &mut t2);
+        }
+
+        if t1 > t_min {
+            t_min = t1;
+            hit_normal = n;
+        }
+        t_max = t_max.min(t2);
+        if t_min > t_max {
+            return None;
+        }
+    }
+
+    if (0.0..=1.0).contains(&t_min) {
+        Some((t_min, hit_normal))
+    } else {
+        None
+    }
+}
+
 pub(super) fn third_person_camera(
     mouse_motion: Res<AccumulatedMouseMotion>,
     mouse_scroll: Res<AccumulatedMouseScroll>,
@@ -176,6 +429,26 @@ pub(super) fn third_person_camera(
 
     camera_transform.translation = target + orbit_offset + Vec3::Y * rig.height;
     camera_transform.look_at(target + Vec3::Y * rig.focus_height, Vec3::Y);
+}
+
+pub(super) fn billboard_stair_labels(
+    camera_query: Query<&Transform, (With<Camera3d>, Without<StairSteepnessLabel>)>,
+    mut labels: Query<&mut Transform, (With<StairSteepnessLabel>, Without<Camera3d>)>,
+) {
+    let Ok(camera_transform) = camera_query.single() else {
+        return;
+    };
+
+    for mut label_transform in &mut labels {
+        let to_camera = camera_transform.translation - label_transform.translation;
+        let horizontal = Vec2::new(to_camera.x, to_camera.z);
+        if horizontal.length_squared() < 1e-8 {
+            continue;
+        }
+
+        let yaw = horizontal.x.atan2(horizontal.y);
+        label_transform.rotation = Quat::from_rotation_y(yaw);
+    }
 }
 
 pub(super) fn update_player_blob_shadow(
