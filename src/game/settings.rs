@@ -75,6 +75,8 @@ pub(super) struct GameSettings {
     pub(super) resolution_height: u32,
     pub(super) msaa_enabled: bool,
     pub(super) shadow_mode: ShadowModeSetting,
+    pub(super) foot_support_max_drop: f32,
+    pub(super) foot_support_max_rise: f32,
 }
 
 impl Default for GameSettings {
@@ -85,6 +87,8 @@ impl Default for GameSettings {
             resolution_height: 1080,
             msaa_enabled: true,
             shadow_mode: ShadowModeSetting::Blob,
+            foot_support_max_drop: 0.45,
+            foot_support_max_rise: 0.42,
         }
     }
 }

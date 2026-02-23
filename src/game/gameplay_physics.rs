@@ -149,6 +149,7 @@ pub(super) fn player_move(
 pub(super) fn animate_procedural_human(
     time: Res<Time>,
     menu: Res<MenuState>,
+    settings: Res<GameSettings>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     world_collision_grid: Res<WorldCollisionGrid>,
     camera_query: Query<&ThirdPersonCameraRig, With<Camera3d>>,
@@ -227,7 +228,7 @@ pub(super) fn animate_procedural_human(
     anim_state.last_position = player_transform.translation;
     let target_visual_y = player_transform.translation.y;
     let vertical_follow_rate = if target_visual_y > anim_state.visual_center_y {
-        9.0
+        5.0
     } else {
         16.0
     };
@@ -270,6 +271,8 @@ pub(super) fn animate_procedural_human(
     }
 
     let gait = smoothstep01(((speed_factor - 0.10) / 0.25).clamp(0.0, 1.0));
+    let foot_support_max_drop = settings.foot_support_max_drop.max(0.0);
+    let foot_support_max_rise = settings.foot_support_max_rise.max(0.0);
 
     // If one foot is supported lower (edge of stairs), lower pelvis so stance feet can reach.
     let mut pelvis_drop = 0.0_f32;
@@ -286,6 +289,7 @@ pub(super) fn animate_procedural_human(
                     stride,
                 );
             let mut ankle_target_world = test_root + root_world_rotation * nominal_local;
+            let nominal_ankle_y = ankle_target_world.y;
             let probe = Vec3::new(
                 ankle_target_world.x,
                 test_root.y + 2.0,
@@ -294,6 +298,10 @@ pub(super) fn animate_procedural_human(
 
             if let Some(ground_y) = sample_ground_height(&world_collision_grid, probe, 0.12) {
                 let planted_y = ground_y + hip.ankle_height;
+                let support_delta = planted_y - nominal_ankle_y;
+                if support_delta < -foot_support_max_drop || support_delta > foot_support_max_rise {
+                    continue;
+                }
                 let stance = 1.0 - lift;
                 let plant_strength = (0.82 + (1.0 - gait) * 0.16).clamp(0.0, 0.98);
                 ankle_target_world.y = ankle_target_world.y.max(planted_y);
@@ -343,6 +351,7 @@ pub(super) fn animate_procedural_human(
                 stride,
             );
         let mut ankle_target_world = root_world_translation + root_world_rotation * nominal_local;
+        let nominal_ankle_y = ankle_target_world.y;
 
         let probe = Vec3::new(
             ankle_target_world.x,
@@ -351,11 +360,14 @@ pub(super) fn animate_procedural_human(
         );
         if let Some(ground_y) = sample_ground_height(&world_collision_grid, probe, 0.12) {
             let planted_y = ground_y + hip.ankle_height;
-            let stance = 1.0 - lift;
-            let plant_strength = (0.82 + (1.0 - gait) * 0.16).clamp(0.0, 0.98);
-            ankle_target_world.y = ankle_target_world.y.max(planted_y);
-            ankle_target_world.y = ankle_target_world.y * (1.0 - stance * plant_strength)
-                + planted_y * (stance * plant_strength);
+            let support_delta = planted_y - nominal_ankle_y;
+            if support_delta >= -foot_support_max_drop && support_delta <= foot_support_max_rise {
+                let stance = 1.0 - lift;
+                let plant_strength = (0.82 + (1.0 - gait) * 0.16).clamp(0.0, 0.98);
+                ankle_target_world.y = ankle_target_world.y.max(planted_y);
+                ankle_target_world.y = ankle_target_world.y * (1.0 - stance * plant_strength)
+                    + planted_y * (stance * plant_strength);
+            }
         }
 
         let target_local =

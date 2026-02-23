@@ -5,6 +5,8 @@
         resolution_height: 1080,
         msaa_enabled: true,
         shadow_mode: Stencil,
+        foot_support_max_drop: 0.45,
+        foot_support_max_rise: 0.42,
     ),
     keybinds: (
         move_forward: "KeyW",
