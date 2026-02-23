@@ -300,7 +300,12 @@ pub(super) fn animate_procedural_human(
     let horizontal_velocity = Vec2::new(delta.x, delta.z) / dt;
     let facing_forward = player_transform.rotation * -Vec3::Z;
     let facing_forward_xz = Vec2::new(facing_forward.x, facing_forward.z).normalize_or_zero();
+    let facing_right = player_transform.rotation * Vec3::X;
+    let facing_right_xz = Vec2::new(facing_right.x, facing_right.z).normalize_or_zero();
     let forward_speed = horizontal_velocity.dot(facing_forward_xz);
+    let strafe_speed = horizontal_velocity.dot(facing_right_xz);
+    let strafe_sign = strafe_speed.signum();
+    let strafe_factor = (strafe_speed.abs() / 6.5).clamp(0.0, 1.0) * (0.2 + 0.8 * (1.0 - airborne));
     let forward_air = (forward_speed / 6.5).clamp(0.0, 1.0) * airborne;
     let landing_ready = forward_air * smoothstep01(jump_down);
 
@@ -311,7 +316,8 @@ pub(super) fn animate_procedural_human(
 
     let stride_bob = (anim_state.phase * 2.0).sin() * (0.01 + 0.045 * speed_factor);
     let idle_bob = (time.elapsed_secs() * 1.5).sin() * (0.006 * (1.0 - speed_factor));
-    let lean_roll = (anim_state.phase).sin() * 0.06 * speed_factor;
+    let strafe_lean = -0.08 * strafe_sign * strafe_factor;
+    let lean_roll = (anim_state.phase).sin() * 0.06 * speed_factor + strafe_lean;
     let jump_body_pitch = -0.10 * jump_up + 0.14 * jump_down + 0.12 * landing_ready;
     let jump_body_offset = 0.05 * jump_up - 0.02 * jump_down - 0.02 * landing_ready;
     let mut root_local_translation =
@@ -361,6 +367,7 @@ pub(super) fn animate_procedural_human(
         .clamp(-0.08, 0.45);
     let jump_leg_forward = 0.08 * jump_up - 0.04 * jump_down + 0.06 * landing_ready;
     let leg_stride_scale = (1.0 - 0.70 * jump_pose - 0.12 * landing_ready).clamp(0.15, 1.0);
+    let lateral_step_amp = 0.12 * strafe_factor * (0.25 + 0.75 * gait);
     let jump_arm_pitch = -0.45 * jump_up + 0.25 * jump_down + 0.08 * landing_ready;
 
     // If one foot is supported lower (edge of stairs), lower pelvis so stance feet can reach.
@@ -371,7 +378,9 @@ pub(super) fn animate_procedural_human(
 
         for (hip, _, _) in &mut leg_hips {
             let (swing, lift, stride) = leg_motion(anim_state.phase, hip.side, gait);
-            let nominal_local = hip.base_local
+            let lateral_step = swing * lateral_step_amp * strafe_sign;
+            let leg_base_local = hip.base_local + Vec3::new(lateral_step, 0.0, 0.0);
+            let nominal_local = leg_base_local
                 + Vec3::new(
                     0.0,
                     -(hip.upper_len + hip.lower_len) + lift * (0.10 + 0.08 * gait) + jump_leg_tuck,
@@ -403,7 +412,7 @@ pub(super) fn animate_procedural_human(
 
                     let target_local =
                         root_world_rotation.inverse() * (ankle_target_world - test_root);
-                    let to_target = target_local - hip.base_local;
+                    let to_target = target_local - leg_base_local;
                     let dy = to_target.y;
                     let dz = to_target.z;
                     let leg_total = hip.upper_len + hip.lower_len;
@@ -438,9 +447,11 @@ pub(super) fn animate_procedural_human(
     }
 
     for (hip, mut hip_transform, children) in &mut leg_hips {
-        let (_swing, lift, stride) = leg_motion(anim_state.phase, hip.side, gait);
+        let (swing, lift, stride) = leg_motion(anim_state.phase, hip.side, gait);
+        let lateral_step = swing * lateral_step_amp * strafe_sign;
+        let leg_base_local = hip.base_local + Vec3::new(lateral_step, 0.0, 0.0);
 
-        let nominal_local = hip.base_local
+        let nominal_local = leg_base_local
             + Vec3::new(
                 0.0,
                 -(hip.upper_len + hip.lower_len) + lift * (0.10 + 0.08 * gait) + jump_leg_tuck,
@@ -472,7 +483,7 @@ pub(super) fn animate_procedural_human(
 
         let target_local =
             root_world_rotation.inverse() * (ankle_target_world - root_world_translation);
-        let to_target = target_local - hip.base_local;
+        let to_target = target_local - leg_base_local;
         let dy = to_target.y;
         let dz = to_target.z;
 
@@ -490,7 +501,7 @@ pub(super) fn animate_procedural_human(
             .clamp(-1.0, 1.0);
         let knee_pitch = std::f32::consts::PI - cos_knee.acos();
 
-        hip_transform.translation = hip.base_local;
+        hip_transform.translation = leg_base_local;
         hip_transform.rotation = Quat::from_euler(EulerRot::XYZ, hip_pitch, 0.0, 0.0);
 
         for child in children {
