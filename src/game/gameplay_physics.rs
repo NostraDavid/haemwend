@@ -146,6 +146,308 @@ pub(super) fn player_move(
     transform.translation = next_position;
 }
 
+pub(super) fn animate_procedural_human(
+    time: Res<Time>,
+    menu: Res<MenuState>,
+    mouse_buttons: Res<ButtonInput<MouseButton>>,
+    world_collision_grid: Res<WorldCollisionGrid>,
+    camera_query: Query<&ThirdPersonCameraRig, With<Camera3d>>,
+    mut player_query: Query<
+        (&Transform, &mut ProceduralHumanAnimState),
+        (
+            With<Player>,
+            Without<ProceduralHumanVisualRoot>,
+            Without<HumanLegHip>,
+            Without<HumanLegKnee>,
+            Without<HumanArmPivot>,
+            Without<HumanHead>,
+        ),
+    >,
+    mut visual_root_query: Query<
+        &mut Transform,
+        (
+            With<ProceduralHumanVisualRoot>,
+            Without<Player>,
+            Without<HumanLegHip>,
+            Without<HumanLegKnee>,
+            Without<HumanArmPivot>,
+            Without<HumanHead>,
+        ),
+    >,
+    mut leg_hips: Query<
+        (&HumanLegHip, &mut Transform, &Children),
+        (
+            Without<Player>,
+            Without<ProceduralHumanVisualRoot>,
+            Without<HumanLegKnee>,
+            Without<HumanArmPivot>,
+            Without<HumanHead>,
+        ),
+    >,
+    mut leg_knees: Query<
+        &mut Transform,
+        (
+            With<HumanLegKnee>,
+            Without<Player>,
+            Without<ProceduralHumanVisualRoot>,
+            Without<HumanLegHip>,
+            Without<HumanArmPivot>,
+            Without<HumanHead>,
+        ),
+    >,
+    mut arm_pivots: Query<
+        (&HumanArmPivot, &mut Transform),
+        (
+            Without<Player>,
+            Without<ProceduralHumanVisualRoot>,
+            Without<HumanLegHip>,
+            Without<HumanLegKnee>,
+            Without<HumanHead>,
+        ),
+    >,
+    mut heads: Query<
+        (&HumanHead, &mut Transform),
+        (
+            With<HumanHead>,
+            Without<Player>,
+            Without<ProceduralHumanVisualRoot>,
+            Without<HumanLegHip>,
+            Without<HumanLegKnee>,
+            Without<HumanArmPivot>,
+        ),
+    >,
+) {
+    let Ok((player_transform, mut anim_state)) = player_query.single_mut() else {
+        return;
+    };
+
+    let dt = time.delta_secs().max(1e-5);
+    let delta = player_transform.translation - anim_state.last_position;
+    let measured_speed = Vec2::new(delta.x, delta.z).length() / dt;
+    anim_state.last_position = player_transform.translation;
+
+    let target_speed = if menu.open { 0.0 } else { measured_speed };
+    let smooth = 1.0 - (-dt * 10.0).exp();
+    anim_state.smoothed_speed += (target_speed - anim_state.smoothed_speed) * smooth;
+    let speed_factor = (anim_state.smoothed_speed / 8.0).clamp(0.0, 1.0);
+
+    anim_state.phase += dt * (2.0 + anim_state.smoothed_speed * 2.0);
+    if anim_state.phase > std::f32::consts::TAU {
+        anim_state.phase -= std::f32::consts::TAU;
+    }
+
+    let stride_bob = (anim_state.phase * 2.0).sin() * (0.01 + 0.045 * speed_factor);
+    let idle_bob = (time.elapsed_secs() * 1.5).sin() * (0.006 * (1.0 - speed_factor));
+    let lean_roll = (anim_state.phase).sin() * 0.06 * speed_factor;
+    let mut root_local_translation = Vec3::new(0.0, -0.9 + stride_bob + idle_bob, 0.0);
+    let root_local_rotation =
+        Quat::from_rotation_y(std::f32::consts::PI) * Quat::from_rotation_z(lean_roll);
+    let root_world_rotation = player_transform.rotation * root_local_rotation;
+    let mut root_world_translation =
+        player_transform.translation + player_transform.rotation * root_local_translation;
+
+    let mut head_yaw_target = 0.0;
+    let mut head_pitch_target = 0.0;
+    if mouse_buttons.pressed(MouseButton::Left) {
+        if let Ok(camera_rig) = camera_query.single() {
+            let (player_yaw, _, _) = player_transform.rotation.to_euler(EulerRot::YXZ);
+            head_yaw_target = shortest_angle_delta(player_yaw, camera_rig.yaw);
+            head_pitch_target = -camera_rig.pitch;
+        }
+    }
+
+    let gait = smoothstep01(((speed_factor - 0.10) / 0.25).clamp(0.0, 1.0));
+
+    // If one foot is supported lower (edge of stairs), lower pelvis so stance feet can reach.
+    let mut pelvis_drop = 0.0_f32;
+    for _ in 0..2 {
+        let test_root = root_world_translation - Vec3::Y * pelvis_drop;
+        let mut required_drop = 0.0_f32;
+
+        for (hip, _, _) in &mut leg_hips {
+            let (swing, lift, stride) = leg_motion(anim_state.phase, hip.side, gait);
+            let nominal_local = hip.base_local
+                + Vec3::new(
+                    0.0,
+                    -(hip.upper_len + hip.lower_len) + lift * (0.10 + 0.08 * gait),
+                    stride,
+                );
+            let mut ankle_target_world = test_root + root_world_rotation * nominal_local;
+            let probe = Vec3::new(
+                ankle_target_world.x,
+                test_root.y + 2.0,
+                ankle_target_world.z,
+            );
+
+            if let Some(ground_y) = sample_ground_height(&world_collision_grid, probe, 0.12) {
+                let planted_y = ground_y + hip.ankle_height;
+                let stance = 1.0 - lift;
+                let plant_strength = (0.82 + (1.0 - gait) * 0.16).clamp(0.0, 0.98);
+                ankle_target_world.y = ankle_target_world.y.max(planted_y);
+                ankle_target_world.y = ankle_target_world.y * (1.0 - stance * plant_strength)
+                    + planted_y * (stance * plant_strength);
+
+                let target_local = root_world_rotation.inverse() * (ankle_target_world - test_root);
+                let to_target = target_local - hip.base_local;
+                let dy = to_target.y;
+                let dz = to_target.z;
+                let leg_total = hip.upper_len + hip.lower_len;
+                let max_reach = (leg_total - 0.015).max(0.05);
+                if dz.abs() >= max_reach {
+                    continue;
+                }
+
+                let reachable_dy = -(max_reach * max_reach - dz * dz).sqrt();
+                let needed = (reachable_dy - dy).max(0.0);
+                required_drop = required_drop.max(needed * (1.0 - 0.35 * swing.abs()));
+            }
+        }
+
+        if required_drop <= 0.0005 {
+            break;
+        }
+        pelvis_drop = (pelvis_drop + required_drop).min(0.35);
+    }
+
+    if pelvis_drop > 0.0 {
+        root_local_translation.y -= pelvis_drop;
+        root_world_translation =
+            player_transform.translation + player_transform.rotation * root_local_translation;
+    }
+
+    if let Ok(mut root_transform) = visual_root_query.single_mut() {
+        root_transform.translation = root_local_translation;
+        root_transform.rotation = root_local_rotation;
+    }
+
+    for (hip, mut hip_transform, children) in &mut leg_hips {
+        let (_swing, lift, stride) = leg_motion(anim_state.phase, hip.side, gait);
+
+        let nominal_local = hip.base_local
+            + Vec3::new(
+                0.0,
+                -(hip.upper_len + hip.lower_len) + lift * (0.10 + 0.08 * gait),
+                stride,
+            );
+        let mut ankle_target_world = root_world_translation + root_world_rotation * nominal_local;
+
+        let probe = Vec3::new(
+            ankle_target_world.x,
+            root_world_translation.y + 2.0,
+            ankle_target_world.z,
+        );
+        if let Some(ground_y) = sample_ground_height(&world_collision_grid, probe, 0.12) {
+            let planted_y = ground_y + hip.ankle_height;
+            let stance = 1.0 - lift;
+            let plant_strength = (0.82 + (1.0 - gait) * 0.16).clamp(0.0, 0.98);
+            ankle_target_world.y = ankle_target_world.y.max(planted_y);
+            ankle_target_world.y = ankle_target_world.y * (1.0 - stance * plant_strength)
+                + planted_y * (stance * plant_strength);
+        }
+
+        let target_local =
+            root_world_rotation.inverse() * (ankle_target_world - root_world_translation);
+        let to_target = target_local - hip.base_local;
+        let dy = to_target.y;
+        let dz = to_target.z;
+
+        let leg_total = hip.upper_len + hip.lower_len;
+        let dist = (dy * dy + dz * dz).sqrt().clamp(0.05, leg_total - 0.001);
+        let base_angle = dz.atan2(-dy);
+        let cos_hip = ((hip.upper_len * hip.upper_len + dist * dist
+            - hip.lower_len * hip.lower_len)
+            / (2.0 * hip.upper_len * dist))
+            .clamp(-1.0, 1.0);
+        let hip_pitch = base_angle - cos_hip.acos();
+        let cos_knee = ((hip.upper_len * hip.upper_len + hip.lower_len * hip.lower_len
+            - dist * dist)
+            / (2.0 * hip.upper_len * hip.lower_len))
+            .clamp(-1.0, 1.0);
+        let knee_pitch = std::f32::consts::PI - cos_knee.acos();
+
+        hip_transform.translation = hip.base_local;
+        hip_transform.rotation = Quat::from_euler(EulerRot::XYZ, hip_pitch, 0.0, 0.0);
+
+        for child in children {
+            if let Ok(mut knee_transform) = leg_knees.get_mut(*child) {
+                knee_transform.translation = Vec3::new(0.0, -hip.upper_len, 0.0);
+                knee_transform.rotation = Quat::from_euler(EulerRot::XYZ, knee_pitch, 0.0, 0.0);
+            }
+        }
+    }
+
+    for (pivot, mut transform) in &mut arm_pivots {
+        let side_phase = if pivot.side == LimbSide::Left {
+            std::f32::consts::PI
+        } else {
+            0.0
+        };
+        let swing = (anim_state.phase + side_phase).sin();
+        let idle = (time.elapsed_secs() * 1.8 + side_phase).sin() * 0.07 * (1.0 - speed_factor);
+        let pitch = swing * (0.15 + 0.72 * speed_factor) + idle;
+        transform.translation = pivot.base_local;
+        transform.rotation = Quat::from_euler(EulerRot::XYZ, pitch, 0.0, 0.0);
+    }
+
+    let head_blend = 1.0 - (-dt * 12.0).exp();
+    for (head, mut transform) in &mut heads {
+        let yaw = head_yaw_target.clamp(-head.max_yaw, head.max_yaw);
+        let pitch = head_pitch_target.clamp(-head.max_pitch_down, head.max_pitch_up);
+        let target_rot = Quat::from_euler(EulerRot::YXZ, yaw, pitch, 0.0);
+        transform.translation = head.base_local;
+        transform.rotation = transform.rotation.slerp(target_rot, head_blend);
+    }
+}
+
+fn shortest_angle_delta(from: f32, to: f32) -> f32 {
+    let mut delta =
+        (to - from + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU) - std::f32::consts::PI;
+    if delta <= -std::f32::consts::PI {
+        delta += std::f32::consts::TAU;
+    }
+    delta
+}
+
+fn smoothstep01(t: f32) -> f32 {
+    t * t * (3.0 - 2.0 * t)
+}
+
+fn leg_motion(phase: f32, side: LimbSide, gait: f32) -> (f32, f32, f32) {
+    let side_phase = if side == LimbSide::Left {
+        0.0
+    } else {
+        std::f32::consts::PI
+    };
+    let swing = (phase + side_phase).sin();
+    let lift = swing.max(0.0) * gait;
+    let stride = swing * (0.22 * gait);
+    (swing, lift, stride)
+}
+
+fn sample_ground_height(
+    grid: &WorldCollisionGrid,
+    probe_world: Vec3,
+    foot_radius: f32,
+) -> Option<f32> {
+    let mut best_top: Option<f32> = None;
+    grid.query_nearby(probe_world, foot_radius + 0.2, |collider| {
+        if !intersects_disc_aabb_xz(
+            probe_world,
+            foot_radius,
+            collider.center,
+            collider.half_extents,
+        ) {
+            return;
+        }
+
+        let top = collider.center.y + collider.half_extents.y;
+        if top <= probe_world.y {
+            best_top = Some(best_top.map_or(top, |current| current.max(top)));
+        }
+    });
+    best_top
+}
+
 fn move_with_slide(
     start: Vec3,
     displacement: Vec3,
@@ -846,7 +1148,9 @@ pub(super) fn intersects_disc_aabb_xz(
     let dz = (disc_center.z - box_center.z).abs() - box_half_extents.z;
     let outside_x = dx.max(0.0);
     let outside_z = dz.max(0.0);
-    outside_x * outside_x + outside_z * outside_z < disc_radius * disc_radius
+    let dist_sq = outside_x * outside_x + outside_z * outside_z;
+    let radius_sq = disc_radius * disc_radius;
+    dist_sq <= radius_sq + 1e-5
 }
 
 pub(super) fn intersects_vertical_capsule_aabb(

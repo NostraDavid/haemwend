@@ -109,7 +109,12 @@ pub fn run() {
         .add_systems(Update, sync_mouse_capture_with_focus)
         .add_systems(
             Update,
-            (player_move, update_player_blob_shadow, third_person_camera)
+            (
+                player_move,
+                animate_procedural_human,
+                update_player_blob_shadow,
+                third_person_camera,
+            )
                 .chain()
                 .after(rebuild_menu_ui),
         )

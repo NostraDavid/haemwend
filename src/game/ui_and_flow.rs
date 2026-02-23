@@ -186,11 +186,43 @@ pub(super) fn spawn_scenario_world(
 
     let player_radius: f32 = 0.35;
     let player_half_height: f32 = 0.9;
-    let player_cylinder_length = (player_half_height * 2.0 - player_radius * 2.0).max(0.0_f32);
-    let player_mesh = meshes.add(Capsule3d::new(player_radius, player_cylinder_length));
-    let player_mat = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.91, 0.84, 0.64),
-        perceptual_roughness: 0.88,
+    let torso_mesh = meshes.add(Cuboid::new(0.54, 0.66, 0.30));
+    let pelvis_mesh = meshes.add(Cuboid::new(0.42, 0.24, 0.26));
+    let head_mesh = meshes.add(Cuboid::new(0.28, 0.30, 0.26));
+    let hair_mesh = meshes.add(Cuboid::new(0.30, 0.10, 0.28));
+    let arm_mesh = meshes.add(Capsule3d::new(0.065, 0.38));
+    // Keep leg chain length aligned with hip height so IK can actually reach the floor.
+    let upper_leg_len = 0.40_f32;
+    let lower_leg_len = 0.40_f32;
+    let ankle_height = 0.08_f32;
+    let upper_leg_mesh = meshes.add(Cuboid::new(0.16, upper_leg_len, 0.16));
+    let lower_leg_mesh = meshes.add(Cuboid::new(0.14, lower_leg_len, 0.14));
+    let hand_mesh = meshes.add(Cuboid::new(0.11, 0.12, 0.10));
+    let foot_mesh = meshes.add(Cuboid::new(0.14, 0.08, 0.24));
+
+    let skin_mat = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.93, 0.79, 0.67),
+        perceptual_roughness: 0.9,
+        ..default()
+    });
+    let shirt_mat = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.22, 0.38, 0.64),
+        perceptual_roughness: 0.86,
+        ..default()
+    });
+    let pants_mat = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.17, 0.18, 0.23),
+        perceptual_roughness: 0.9,
+        ..default()
+    });
+    let hair_mat = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.15, 0.10, 0.07),
+        perceptual_roughness: 0.82,
+        ..default()
+    });
+    let boot_mat = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.10, 0.10, 0.12),
+        perceptual_roughness: 0.96,
         ..default()
     });
     let baked_shadow_mesh = meshes.add(Plane3d::default().mesh().size(1.0, 1.0));
@@ -209,22 +241,198 @@ pub(super) fn spawn_scenario_world(
         ..default()
     });
 
-    commands.spawn((
-        Player::default(),
-        Mesh3d(player_mesh),
-        MeshMaterial3d(player_mat),
-        Transform::from_xyz(0.0, player_half_height, 0.0),
-        NotShadowCaster,
-        PlayerCollider {
-            radius: player_radius,
-            half_height: player_half_height,
-        },
-        PlayerKinematics {
-            vertical_velocity: 0.0,
-            grounded: true,
-        },
-        InGameEntity,
-    ));
+    commands
+        .spawn((
+            Player::default(),
+            Transform::from_xyz(0.0, player_half_height, 0.0),
+            NotShadowCaster,
+            PlayerCollider {
+                radius: player_radius,
+                half_height: player_half_height,
+            },
+            ProceduralHumanAnimState::from_position(Vec3::new(0.0, player_half_height, 0.0)),
+            PlayerKinematics {
+                vertical_velocity: 0.0,
+                grounded: true,
+            },
+            InGameEntity,
+        ))
+        .with_children(|player| {
+            player
+                .spawn((
+                    ProceduralHumanVisualRoot,
+                    Transform::from_xyz(0.0, -player_half_height, 0.0),
+                ))
+                .with_children(|human| {
+                    human.spawn((
+                        PlayerVisualPart,
+                        Mesh3d(pelvis_mesh.clone()),
+                        MeshMaterial3d(pants_mat.clone()),
+                        Transform::from_xyz(0.0, 0.88, 0.0),
+                    ));
+                    human.spawn((
+                        PlayerVisualPart,
+                        Mesh3d(torso_mesh.clone()),
+                        MeshMaterial3d(shirt_mat.clone()),
+                        Transform::from_xyz(0.0, 1.24, 0.0),
+                    ));
+                    human
+                        .spawn((
+                            HumanHead {
+                                base_local: Vec3::new(0.0, 1.64, 0.0),
+                                max_yaw: 0.80,
+                                max_pitch_up: 0.42,
+                                max_pitch_down: 0.48,
+                            },
+                            PlayerVisualPart,
+                            Mesh3d(head_mesh.clone()),
+                            MeshMaterial3d(skin_mat.clone()),
+                            Transform::from_xyz(0.0, 1.64, 0.0),
+                        ))
+                        .with_children(|head| {
+                            head.spawn((
+                                PlayerVisualPart,
+                                Mesh3d(hair_mesh.clone()),
+                                MeshMaterial3d(hair_mat.clone()),
+                                Transform::from_xyz(0.0, 0.16, 0.0),
+                            ));
+                        });
+
+                    let left_arm_base = Vec3::new(-0.34, 1.40, 0.0);
+                    human
+                        .spawn((
+                            HumanArmPivot {
+                                side: LimbSide::Left,
+                                base_local: left_arm_base,
+                            },
+                            Transform::from_translation(left_arm_base),
+                        ))
+                        .with_children(|arm| {
+                            arm.spawn((
+                                PlayerVisualPart,
+                                Mesh3d(arm_mesh.clone()),
+                                MeshMaterial3d(shirt_mat.clone()),
+                                Transform::from_xyz(0.0, -0.26, 0.0),
+                            ));
+                            arm.spawn((
+                                PlayerVisualPart,
+                                Mesh3d(hand_mesh.clone()),
+                                MeshMaterial3d(skin_mat.clone()),
+                                Transform::from_xyz(0.0, -0.57, 0.03),
+                            ));
+                        });
+
+                    let right_arm_base = Vec3::new(0.34, 1.40, 0.0);
+                    human
+                        .spawn((
+                            HumanArmPivot {
+                                side: LimbSide::Right,
+                                base_local: right_arm_base,
+                            },
+                            Transform::from_translation(right_arm_base),
+                        ))
+                        .with_children(|arm| {
+                            arm.spawn((
+                                PlayerVisualPart,
+                                Mesh3d(arm_mesh.clone()),
+                                MeshMaterial3d(shirt_mat.clone()),
+                                Transform::from_xyz(0.0, -0.26, 0.0),
+                            ));
+                            arm.spawn((
+                                PlayerVisualPart,
+                                Mesh3d(hand_mesh.clone()),
+                                MeshMaterial3d(skin_mat.clone()),
+                                Transform::from_xyz(0.0, -0.57, 0.03),
+                            ));
+                        });
+
+                    let left_leg_base = Vec3::new(-0.16, 0.88, 0.0);
+                    human
+                        .spawn((
+                            HumanLegHip {
+                                side: LimbSide::Left,
+                                base_local: left_leg_base,
+                                upper_len: upper_leg_len,
+                                lower_len: lower_leg_len,
+                                ankle_height,
+                            },
+                            Transform::from_translation(left_leg_base),
+                        ))
+                        .with_children(|leg| {
+                            leg.spawn((
+                                PlayerVisualPart,
+                                Mesh3d(upper_leg_mesh.clone()),
+                                MeshMaterial3d(pants_mat.clone()),
+                                Transform::from_xyz(0.0, -upper_leg_len * 0.5, 0.0),
+                            ));
+                            leg.spawn((
+                                HumanLegKnee,
+                                Transform::from_xyz(0.0, -upper_leg_len, 0.0),
+                            ))
+                            .with_children(|knee| {
+                                knee.spawn((
+                                    PlayerVisualPart,
+                                    Mesh3d(lower_leg_mesh.clone()),
+                                    MeshMaterial3d(pants_mat.clone()),
+                                    Transform::from_xyz(0.0, -lower_leg_len * 0.5, 0.0),
+                                ));
+                                knee.spawn((
+                                    PlayerVisualPart,
+                                    Mesh3d(foot_mesh.clone()),
+                                    MeshMaterial3d(boot_mat.clone()),
+                                    Transform::from_xyz(
+                                        0.0,
+                                        -(lower_leg_len + ankle_height * 0.5),
+                                        0.09,
+                                    ),
+                                ));
+                            });
+                        });
+
+                    let right_leg_base = Vec3::new(0.16, 0.88, 0.0);
+                    human
+                        .spawn((
+                            HumanLegHip {
+                                side: LimbSide::Right,
+                                base_local: right_leg_base,
+                                upper_len: upper_leg_len,
+                                lower_len: lower_leg_len,
+                                ankle_height,
+                            },
+                            Transform::from_translation(right_leg_base),
+                        ))
+                        .with_children(|leg| {
+                            leg.spawn((
+                                PlayerVisualPart,
+                                Mesh3d(upper_leg_mesh.clone()),
+                                MeshMaterial3d(pants_mat.clone()),
+                                Transform::from_xyz(0.0, -upper_leg_len * 0.5, 0.0),
+                            ));
+                            leg.spawn((
+                                HumanLegKnee,
+                                Transform::from_xyz(0.0, -upper_leg_len, 0.0),
+                            ))
+                            .with_children(|knee| {
+                                knee.spawn((
+                                    PlayerVisualPart,
+                                    Mesh3d(lower_leg_mesh.clone()),
+                                    MeshMaterial3d(pants_mat.clone()),
+                                    Transform::from_xyz(0.0, -lower_leg_len * 0.5, 0.0),
+                                ));
+                                knee.spawn((
+                                    PlayerVisualPart,
+                                    Mesh3d(foot_mesh.clone()),
+                                    MeshMaterial3d(boot_mat.clone()),
+                                    Transform::from_xyz(
+                                        0.0,
+                                        -(lower_leg_len + ankle_height * 0.5),
+                                        0.09,
+                                    ),
+                                ));
+                            });
+                        });
+                });
+        });
 
     commands.spawn((
         PlayerBlobShadow,
@@ -1146,6 +1354,7 @@ pub(super) fn apply_runtime_settings(
     primary_window: Single<&mut Window, With<PrimaryWindow>>,
     camera_entities: Query<Entity, With<Camera3d>>,
     player_entities: Query<(Entity, Has<NotShadowCaster>), With<Player>>,
+    player_visual_entities: Query<(Entity, Has<NotShadowCaster>), With<PlayerVisualPart>>,
     mut lights: Query<&mut DirectionalLight>,
     mut visibility_queries: ParamSet<(
         Query<&mut Visibility, (With<PlayerBlobShadow>, Without<BakedShadow>)>,
@@ -1234,6 +1443,16 @@ pub(super) fn apply_runtime_settings(
             }
         } else if !has_not_shadow_caster {
             commands.entity(player).insert(NotShadowCaster);
+        }
+    }
+
+    for (entity, has_not_shadow_caster) in &player_visual_entities {
+        if stencil_mode {
+            if has_not_shadow_caster {
+                commands.entity(entity).remove::<NotShadowCaster>();
+            }
+        } else if !has_not_shadow_caster {
+            commands.entity(entity).insert(NotShadowCaster);
         }
     }
 

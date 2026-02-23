@@ -79,10 +79,55 @@ pub(super) struct InGameEntity;
 pub(super) struct StairSteepnessLabel;
 
 #[derive(Component)]
+pub(super) struct PlayerVisualPart;
+
+#[derive(Component)]
 pub(super) struct StartMenuRoot;
 
 #[derive(Component)]
 pub(super) struct StartMenuCamera;
+
+#[derive(Component)]
+pub(super) struct ProceduralHumanVisualRoot;
+
+#[derive(Component)]
+pub(super) struct ProceduralHumanAnimState {
+    pub(super) phase: f32,
+    pub(super) smoothed_speed: f32,
+    pub(super) last_position: Vec3,
+}
+
+#[derive(Component, Clone, Copy, PartialEq, Eq)]
+pub(super) enum LimbSide {
+    Left,
+    Right,
+}
+
+#[derive(Component)]
+pub(super) struct HumanLegHip {
+    pub(super) side: LimbSide,
+    pub(super) base_local: Vec3,
+    pub(super) upper_len: f32,
+    pub(super) lower_len: f32,
+    pub(super) ankle_height: f32,
+}
+
+#[derive(Component)]
+pub(super) struct HumanArmPivot {
+    pub(super) side: LimbSide,
+    pub(super) base_local: Vec3,
+}
+
+#[derive(Component)]
+pub(super) struct HumanHead {
+    pub(super) base_local: Vec3,
+    pub(super) max_yaw: f32,
+    pub(super) max_pitch_up: f32,
+    pub(super) max_pitch_down: f32,
+}
+
+#[derive(Component)]
+pub(super) struct HumanLegKnee;
 
 #[derive(Component, Clone, Copy)]
 pub(super) struct MenuButton(pub(super) MenuButtonAction);
@@ -238,6 +283,16 @@ impl Default for ThirdPersonCameraRig {
             max_distance: 20.0,
             height: 2.0,
             focus_height: 1.1,
+        }
+    }
+}
+
+impl ProceduralHumanAnimState {
+    pub(super) fn from_position(position: Vec3) -> Self {
+        Self {
+            phase: 0.0,
+            smoothed_speed: 0.0,
+            last_position: position,
         }
     }
 }
