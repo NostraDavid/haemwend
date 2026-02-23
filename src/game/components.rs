@@ -96,6 +96,8 @@ pub(super) struct ProceduralHumanAnimState {
     pub(super) smoothed_speed: f32,
     pub(super) last_position: Vec3,
     pub(super) visual_center_y: f32,
+    pub(super) ground_ik_weight: f32,
+    pub(super) was_grounded: bool,
 }
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
@@ -295,6 +297,8 @@ impl ProceduralHumanAnimState {
             smoothed_speed: 0.0,
             last_position: position,
             visual_center_y: position.y,
+            ground_ik_weight: 1.0,
+            was_grounded: true,
         }
     }
 }
