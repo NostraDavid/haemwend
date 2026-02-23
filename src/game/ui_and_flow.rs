@@ -354,11 +354,19 @@ pub(super) fn spawn_scenario_world(
 
     if scenario.id == "greenwood" {
         // Place the generated table model as a scene in Greenwood Valley.
+        let table_origin = Vec3::new(7.0, 0.0, -5.0);
         commands.spawn((
             SceneRoot(asset_server.load("models/table.glb#Scene0")),
-            Transform::from_xyz(7.0, 0.0, -5.0),
+            Transform::from_translation(table_origin),
+            InGameEntity,
+        ));
+
+        // Single AABB around the current table export (derived from live_report.json).
+        // If the model shape changes, update this center + half extents.
+        commands.spawn((
+            Transform::from_translation(table_origin + Vec3::new(0.0, 0.2053, 0.0)),
             WorldCollider {
-                half_extents: Vec3::new(0.7, 0.4, 0.7),
+                half_extents: Vec3::new(1.0, 0.2053, 0.6),
             },
             InGameEntity,
         ));
