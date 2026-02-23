@@ -2,7 +2,7 @@ use super::*;
 
 const CONTROLLER_MAX_SLIDES: usize = 4;
 const CONTROLLER_SKIN: f32 = 0.02;
-const CONTROLLER_STEP_HEIGHT: f32 = 0.35;
+const CONTROLLER_STEP_HEIGHT: f32 = 0.38;
 const CONTROLLER_STEP_DROP: f32 = 0.25;
 
 pub(super) fn player_move(
@@ -225,6 +225,14 @@ pub(super) fn animate_procedural_human(
     let delta = player_transform.translation - anim_state.last_position;
     let measured_speed = Vec2::new(delta.x, delta.z).length() / dt;
     anim_state.last_position = player_transform.translation;
+    let target_visual_y = player_transform.translation.y;
+    let vertical_follow_rate = if target_visual_y > anim_state.visual_center_y {
+        9.0
+    } else {
+        16.0
+    };
+    let vertical_follow = 1.0 - (-dt * vertical_follow_rate).exp();
+    anim_state.visual_center_y += (target_visual_y - anim_state.visual_center_y) * vertical_follow;
 
     let target_speed = if menu.open { 0.0 } else { measured_speed };
     let smooth = 1.0 - (-dt * 10.0).exp();
@@ -243,8 +251,13 @@ pub(super) fn animate_procedural_human(
     let root_local_rotation =
         Quat::from_rotation_y(std::f32::consts::PI) * Quat::from_rotation_z(lean_roll);
     let root_world_rotation = player_transform.rotation * root_local_rotation;
+    let visual_player_translation = Vec3::new(
+        player_transform.translation.x,
+        anim_state.visual_center_y,
+        player_transform.translation.z,
+    );
     let mut root_world_translation =
-        player_transform.translation + player_transform.rotation * root_local_translation;
+        visual_player_translation + player_transform.rotation * root_local_translation;
 
     let mut head_yaw_target = 0.0;
     let mut head_pitch_target = 0.0;
@@ -312,7 +325,7 @@ pub(super) fn animate_procedural_human(
     if pelvis_drop > 0.0 {
         root_local_translation.y -= pelvis_drop;
         root_world_translation =
-            player_transform.translation + player_transform.rotation * root_local_translation;
+            visual_player_translation + player_transform.rotation * root_local_translation;
     }
 
     if let Ok(mut root_transform) = visual_root_query.single_mut() {
@@ -562,7 +575,9 @@ fn try_step_move(
         return None;
     }
 
-    let mut best_top: Option<f32> = None;
+    let current_top = start.y - collider.half_height;
+    let mut best_step_up_top: Option<f32> = None;
+    let mut best_flat_top: Option<f32> = None;
     grid.query_nearby(raised_moved, collider.radius + 0.1, |static_collider| {
         if !intersects_disc_aabb_xz(
             raised_moved,
@@ -580,10 +595,15 @@ fn try_step_move(
             return;
         }
 
-        best_top = Some(best_top.map_or(top, |current| current.max(top)));
+        let step_up = top - current_top;
+        if step_up > skin {
+            best_step_up_top = Some(best_step_up_top.map_or(top, |current| current.min(top)));
+        } else if step_up >= -skin {
+            best_flat_top = Some(best_flat_top.map_or(top, |current| current.max(top)));
+        }
     });
 
-    let top = best_top?;
+    let top = best_step_up_top.or(best_flat_top)?;
     let snapped = Vec3::new(raised_moved.x, top + collider.half_height, raised_moved.z);
     if would_collide(snapped, collider, grid) {
         return None;

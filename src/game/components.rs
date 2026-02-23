@@ -95,6 +95,7 @@ pub(super) struct ProceduralHumanAnimState {
     pub(super) phase: f32,
     pub(super) smoothed_speed: f32,
     pub(super) last_position: Vec3,
+    pub(super) visual_center_y: f32,
 }
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
@@ -293,6 +294,7 @@ impl ProceduralHumanAnimState {
             phase: 0.0,
             smoothed_speed: 0.0,
             last_position: position,
+            visual_center_y: position.y,
         }
     }
 }
