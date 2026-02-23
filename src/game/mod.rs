@@ -50,6 +50,7 @@ pub fn run() {
     let persisted = load_persisted_config();
     let initial_settings = persisted.settings;
     let initial_keybinds = persisted.keybinds.to_runtime();
+    let initial_debug = persisted.debug;
 
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -70,6 +71,7 @@ pub fn run() {
         ))
         .insert_resource(initial_settings)
         .insert_resource(initial_keybinds)
+        .insert_resource(initial_debug)
         .insert_resource(GameFlowState {
             in_game: false,
             pending_scenario,

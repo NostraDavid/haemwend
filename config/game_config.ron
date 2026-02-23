@@ -4,7 +4,7 @@
         resolution_width: 1920,
         resolution_height: 1080,
         msaa_enabled: true,
-        shadow_mode: Stencil,
+        shadow_mode: Blob,
     ),
     keybinds: (
         move_forward: "KeyW",
@@ -15,5 +15,10 @@
         turn_right: "KeyF|KeyD",
         sprint: "ShiftLeft",
         jump: "Space",
+    ),
+    debug: (
+        show_performance_overlay: true,
+        show_baked_shadows: true,
+        show_fog: true,
     ),
 )

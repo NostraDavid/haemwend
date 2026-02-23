@@ -1,5 +1,5 @@
 use super::io_and_scenarios::{keycode_to_label, keycodes_from_names, keycodes_to_names};
-use super::settings::GameSettings;
+use super::settings::{DebugSettings, GameSettings};
 use bevy::prelude::{ButtonInput, KeyCode, Resource, Vec3};
 use serde::{Deserialize, Serialize};
 
@@ -271,9 +271,11 @@ impl PersistedKeybinds {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub(super) struct PersistedConfig {
     pub(super) settings: GameSettings,
     pub(super) keybinds: PersistedKeybinds,
+    pub(super) debug: DebugSettings,
 }
 
 impl Default for PersistedConfig {
@@ -281,6 +283,7 @@ impl Default for PersistedConfig {
         Self {
             settings: GameSettings::default(),
             keybinds: PersistedKeybinds::default(),
+            debug: DebugSettings::default(),
         }
     }
 }

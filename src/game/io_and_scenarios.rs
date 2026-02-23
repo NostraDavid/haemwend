@@ -329,10 +329,15 @@ pub(super) fn load_persisted_config() -> PersistedConfig {
     }
 }
 
-pub(super) fn save_persisted_config(settings: &GameSettings, keybinds: &GameKeybinds) {
+pub(super) fn save_persisted_config(
+    settings: &GameSettings,
+    keybinds: &GameKeybinds,
+    debug: &DebugSettings,
+) {
     let persisted = PersistedConfig {
         settings: settings.clone(),
         keybinds: PersistedKeybinds::from_runtime(keybinds),
+        debug: debug.clone(),
     };
 
     let path = Path::new(CONFIG_PATH);

@@ -154,6 +154,18 @@ pub(super) fn load_pending_scenario(
     flow.in_game = true;
 }
 
+fn default_distance_fog() -> DistanceFog {
+    DistanceFog {
+        color: Color::srgba(0.62, 0.72, 0.84, 1.0),
+        directional_light_color: Color::srgba(0.97, 0.88, 0.70, 0.5),
+        directional_light_exponent: 20.0,
+        falloff: FogFalloff::Linear {
+            start: 22.0,
+            end: 78.0,
+        },
+    }
+}
+
 pub(super) fn spawn_scenario_world(
     commands: &mut Commands,
     asset_server: &AssetServer,
@@ -224,15 +236,7 @@ pub(super) fn spawn_scenario_world(
         Transform::from_xyz(0.0, 4.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
         ThirdPersonCameraRig::default(),
         Msaa::Sample4,
-        DistanceFog {
-            color: Color::srgba(0.62, 0.72, 0.84, 1.0),
-            directional_light_color: Color::srgba(0.97, 0.88, 0.70, 0.5),
-            directional_light_exponent: 20.0,
-            falloff: FogFalloff::Linear {
-                start: 22.0,
-                end: 78.0,
-            },
-        },
+        default_distance_fog(),
         InGameEntity,
     ));
 
@@ -426,6 +430,7 @@ pub(super) fn handle_menu_buttons(
     mut flow: ResMut<GameFlowState>,
     mut menu: ResMut<MenuState>,
     mut settings: ResMut<GameSettings>,
+    mut debug: ResMut<DebugSettings>,
     keybinds: ResMut<GameKeybinds>,
     in_game_entities: Query<Entity, With<InGameEntity>>,
     start_menu_roots: Query<Entity, With<StartMenuRoot>>,
@@ -451,6 +456,10 @@ pub(super) fn handle_menu_buttons(
                     }
                     MenuButtonAction::OpenSettings => {
                         menu.screen = MenuScreen::Settings;
+                        menu.awaiting_rebind = None;
+                    }
+                    MenuButtonAction::OpenDebug => {
+                        menu.screen = MenuScreen::Debug;
                         menu.awaiting_rebind = None;
                     }
                     MenuButtonAction::OpenKeybinds => {
@@ -515,6 +524,18 @@ pub(super) fn handle_menu_buttons(
                         settings.shadow_mode = settings.shadow_mode.next();
                         should_save = true;
                     }
+                    MenuButtonAction::TogglePerformanceOverlay => {
+                        debug.show_performance_overlay = !debug.show_performance_overlay;
+                        should_save = true;
+                    }
+                    MenuButtonAction::ToggleBakedShadows => {
+                        debug.show_baked_shadows = !debug.show_baked_shadows;
+                        should_save = true;
+                    }
+                    MenuButtonAction::ToggleFog => {
+                        debug.show_fog = !debug.show_fog;
+                        should_save = true;
+                    }
                     MenuButtonAction::StartRebind(action) => {
                         menu.screen = MenuScreen::Keybinds;
                         menu.awaiting_rebind = Some(action);
@@ -536,7 +557,7 @@ pub(super) fn handle_menu_buttons(
     }
 
     if should_save {
-        save_persisted_config(&settings, &keybinds);
+        save_persisted_config(&settings, &keybinds, &debug);
     }
 }
 
@@ -544,6 +565,7 @@ pub(super) fn capture_rebind_input(
     keys: Res<ButtonInput<KeyCode>>,
     mut menu: ResMut<MenuState>,
     settings: Res<GameSettings>,
+    debug: Res<DebugSettings>,
     mut keybinds: ResMut<GameKeybinds>,
 ) {
     if !menu.open || menu.screen != MenuScreen::Keybinds {
@@ -566,7 +588,7 @@ pub(super) fn capture_rebind_input(
         };
         menu.awaiting_rebind = None;
         if changed {
-            save_persisted_config(&settings, &keybinds);
+            save_persisted_config(&settings, &keybinds, &debug);
         }
         menu.dirty = true;
         break;
@@ -607,6 +629,7 @@ pub(super) fn rebuild_menu_ui(
     mut menu: ResMut<MenuState>,
     existing_roots: Query<Entity, With<MenuRoot>>,
     settings: Res<GameSettings>,
+    debug: Res<DebugSettings>,
     keybinds: Res<GameKeybinds>,
 ) {
     if !menu.dirty {
@@ -651,6 +674,7 @@ pub(super) fn rebuild_menu_ui(
                     Text::new(match menu.screen {
                         MenuScreen::Main => "Game Menu",
                         MenuScreen::Settings => "Settings",
+                        MenuScreen::Debug => "Debug",
                         MenuScreen::Keybinds => "Keybinds",
                         MenuScreen::ExitConfirm => {
                             if flow.in_game {
@@ -694,6 +718,15 @@ pub(super) fn rebuild_menu_ui(
                                 menu_button_normal_color(),
                             ))
                             .with_child(Text::new("Keybinds"));
+
+                        panel
+                            .spawn((
+                                Button,
+                                MenuButton(MenuButtonAction::OpenDebug),
+                                menu_button_node(),
+                                menu_button_normal_color(),
+                            ))
+                            .with_child(Text::new("Debug"));
 
                         panel
                             .spawn((
@@ -755,6 +788,60 @@ pub(super) fn rebuild_menu_ui(
                             .with_child(Text::new(format!(
                                 "Shadows: {}",
                                 settings.shadow_mode.label()
+                            )));
+
+                        panel
+                            .spawn((
+                                Button,
+                                MenuButton(MenuButtonAction::BackMain),
+                                menu_button_node(),
+                                menu_button_normal_color(),
+                            ))
+                            .with_child(Text::new("Back"));
+                    }
+                    MenuScreen::Debug => {
+                        panel
+                            .spawn((
+                                Button,
+                                MenuButton(MenuButtonAction::TogglePerformanceOverlay),
+                                menu_button_node(),
+                                menu_button_normal_color(),
+                            ))
+                            .with_child(Text::new(format!(
+                                "Performance Overlay: {}",
+                                if debug.show_performance_overlay {
+                                    "On"
+                                } else {
+                                    "Off"
+                                }
+                            )));
+
+                        panel
+                            .spawn((
+                                Button,
+                                MenuButton(MenuButtonAction::ToggleBakedShadows),
+                                menu_button_node(),
+                                menu_button_normal_color(),
+                            ))
+                            .with_child(Text::new(format!(
+                                "Baked Shadows: {}",
+                                if debug.show_baked_shadows {
+                                    "On"
+                                } else {
+                                    "Off"
+                                }
+                            )));
+
+                        panel
+                            .spawn((
+                                Button,
+                                MenuButton(MenuButtonAction::ToggleFog),
+                                menu_button_node(),
+                                menu_button_normal_color(),
+                            ))
+                            .with_child(Text::new(format!(
+                                "Fog: {}",
+                                if debug.show_fog { "On" } else { "Off" }
                             )));
 
                         panel
@@ -887,30 +974,46 @@ pub(super) fn rebuild_menu_ui(
 
 pub(super) fn apply_runtime_settings(
     settings: Res<GameSettings>,
+    debug: Res<DebugSettings>,
     primary_window: Single<&mut Window, With<PrimaryWindow>>,
     camera_entities: Query<Entity, With<Camera3d>>,
     player_entities: Query<(Entity, Has<NotShadowCaster>), With<Player>>,
     mut lights: Query<&mut DirectionalLight>,
-    mut blob_visibility: Query<&mut Visibility, (With<PlayerBlobShadow>, Without<BakedShadow>)>,
-    mut baked_visibility: Query<&mut Visibility, (With<BakedShadow>, Without<PlayerBlobShadow>)>,
+    mut visibility_queries: ParamSet<(
+        Query<&mut Visibility, (With<PlayerBlobShadow>, Without<BakedShadow>)>,
+        Query<&mut Visibility, (With<BakedShadow>, Without<PlayerBlobShadow>)>,
+        Query<&mut Visibility, With<PerformanceOverlayText>>,
+    )>,
+    camera_has_fog: Query<(), (With<Camera3d>, With<DistanceFog>)>,
     mut commands: Commands,
 ) {
-    if !settings.is_changed() {
+    if !settings.is_changed() && !debug.is_changed() {
         return;
     }
 
-    let mut window = primary_window.into_inner();
-    window.mode = settings.display_mode.to_window_mode();
-    window.resolution.set(
-        settings.resolution_width as f32,
-        settings.resolution_height as f32,
-    );
+    if settings.is_changed() {
+        let mut window = primary_window.into_inner();
+        window.mode = settings.display_mode.to_window_mode();
+        window.resolution.set(
+            settings.resolution_width as f32,
+            settings.resolution_height as f32,
+        );
+    }
 
     if let Ok(camera) = camera_entities.single() {
         if settings.msaa_enabled {
             commands.entity(camera).insert(Msaa::Sample4);
         } else {
             commands.entity(camera).insert(Msaa::Off);
+        }
+
+        let has_fog = camera_has_fog.get(camera).is_ok();
+        if debug.show_fog {
+            if !has_fog {
+                commands.entity(camera).insert(default_distance_fog());
+            }
+        } else if has_fog {
+            commands.entity(camera).remove::<DistanceFog>();
         }
     }
 
@@ -920,7 +1023,7 @@ pub(super) fn apply_runtime_settings(
         light.shadows_enabled = stencil_mode;
     }
 
-    for mut visibility in &mut blob_visibility {
+    for mut visibility in &mut visibility_queries.p0() {
         *visibility = if stencil_mode {
             Visibility::Hidden
         } else {
@@ -928,8 +1031,8 @@ pub(super) fn apply_runtime_settings(
         };
     }
 
-    for mut visibility in &mut baked_visibility {
-        *visibility = if stencil_mode {
+    for mut visibility in &mut visibility_queries.p1() {
+        *visibility = if stencil_mode || !debug.show_baked_shadows {
             Visibility::Hidden
         } else {
             Visibility::Visible
@@ -944,5 +1047,13 @@ pub(super) fn apply_runtime_settings(
         } else if !has_not_shadow_caster {
             commands.entity(player).insert(NotShadowCaster);
         }
+    }
+
+    for mut visibility in &mut visibility_queries.p2() {
+        *visibility = if debug.show_performance_overlay {
+            Visibility::Visible
+        } else {
+            Visibility::Hidden
+        };
     }
 }

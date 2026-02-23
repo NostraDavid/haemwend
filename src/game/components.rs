@@ -5,6 +5,7 @@ use bevy::prelude::*;
 pub(super) enum MenuScreen {
     Main,
     Settings,
+    Debug,
     Keybinds,
     ExitConfirm,
 }
@@ -95,6 +96,7 @@ pub(super) enum StartMenuButtonAction {
 pub(super) enum MenuButtonAction {
     Resume,
     OpenSettings,
+    OpenDebug,
     OpenKeybinds,
     OpenExitConfirm,
     BackMain,
@@ -103,6 +105,9 @@ pub(super) enum MenuButtonAction {
     CycleResolution,
     ToggleMsaa,
     ToggleShadowMode,
+    TogglePerformanceOverlay,
+    ToggleBakedShadows,
+    ToggleFog,
     StartRebind(GameAction),
     ClearKeybindFilter,
 }

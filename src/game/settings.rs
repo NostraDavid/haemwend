@@ -68,6 +68,7 @@ impl ShadowModeSetting {
 }
 
 #[derive(Resource, Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub(super) struct GameSettings {
     pub(super) display_mode: DisplayModeSetting,
     pub(super) resolution_width: u32,
@@ -84,6 +85,24 @@ impl Default for GameSettings {
             resolution_height: 1080,
             msaa_enabled: true,
             shadow_mode: ShadowModeSetting::Blob,
+        }
+    }
+}
+
+#[derive(Resource, Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub(super) struct DebugSettings {
+    pub(super) show_performance_overlay: bool,
+    pub(super) show_baked_shadows: bool,
+    pub(super) show_fog: bool,
+}
+
+impl Default for DebugSettings {
+    fn default() -> Self {
+        Self {
+            show_performance_overlay: true,
+            show_baked_shadows: true,
+            show_fog: true,
         }
     }
 }
