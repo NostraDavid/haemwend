@@ -182,6 +182,7 @@ pub(super) fn spawn_scenario_world(
     let wall_z = scenario.wall_z;
     let tower_z = scenario.tower_z;
     let sun_position = scenario.sun_vec3();
+    let mut static_colliders = Vec::new();
 
     let player_radius: f32 = 0.35;
     let player_half_height: f32 = 0.9;
@@ -262,15 +263,21 @@ pub(super) fn spawn_scenario_world(
         ..default()
     });
 
+    let ground_center = Vec3::new(0.0, -0.05, 0.0);
+    let ground_half = Vec3::new(ground_extent * 0.5, 0.05, ground_extent * 0.5);
     commands.spawn((
         Mesh3d(ground_mesh),
         MeshMaterial3d(ground_mat),
-        Transform::from_xyz(0.0, -0.05, 0.0),
+        Transform::from_translation(ground_center),
         WorldCollider {
-            half_extents: Vec3::new(ground_extent * 0.5, 0.05, ground_extent * 0.5),
+            half_extents: ground_half,
         },
         InGameEntity,
     ));
+    static_colliders.push(StaticCollider {
+        center: ground_center,
+        half_extents: ground_half,
+    });
 
     let wall_mesh = meshes.add(Cuboid::new(3.0, 3.0, 3.0));
     let tower_mesh = meshes.add(Cuboid::new(4.0, 8.0, 4.0));
@@ -307,6 +314,10 @@ pub(super) fn spawn_scenario_world(
                     },
                     InGameEntity,
                 ));
+                static_colliders.push(StaticCollider {
+                    center: Vec3::new(x as f32 * crate_spacing, 0.5, z as f32 * crate_spacing),
+                    half_extents: Vec3::splat(0.5),
+                });
                 spawn_baked_shadow(
                     commands,
                     &baked_shadow_mesh,
@@ -319,16 +330,21 @@ pub(super) fn spawn_scenario_world(
     }
 
     for i in -wall_count..=wall_count {
+        let wall_center = Vec3::new(i as f32 * wall_spacing, 1.5, wall_z);
         commands.spawn((
             Mesh3d(wall_mesh.clone()),
             MeshMaterial3d(wall_mat.clone()),
-            Transform::from_xyz(i as f32 * wall_spacing, 1.5, wall_z),
+            Transform::from_translation(wall_center),
             NotShadowCaster,
             WorldCollider {
                 half_extents: Vec3::splat(1.5),
             },
             InGameEntity,
         ));
+        static_colliders.push(StaticCollider {
+            center: wall_center,
+            half_extents: Vec3::splat(1.5),
+        });
         spawn_baked_shadow(
             commands,
             &baked_shadow_mesh,
@@ -338,16 +354,22 @@ pub(super) fn spawn_scenario_world(
         );
     }
 
+    let tower_center = Vec3::new(0.0, 4.0, tower_z);
+    let tower_half = Vec3::new(2.0, 4.0, 2.0);
     commands.spawn((
         Mesh3d(tower_mesh),
         MeshMaterial3d(tower_mat),
-        Transform::from_xyz(0.0, 4.0, tower_z),
+        Transform::from_translation(tower_center),
         NotShadowCaster,
         WorldCollider {
-            half_extents: Vec3::new(2.0, 4.0, 2.0),
+            half_extents: tower_half,
         },
         InGameEntity,
     ));
+    static_colliders.push(StaticCollider {
+        center: tower_center,
+        half_extents: tower_half,
+    });
     spawn_baked_shadow(
         commands,
         &baked_shadow_mesh,
@@ -367,14 +389,22 @@ pub(super) fn spawn_scenario_world(
 
         // Single AABB around the current table export (derived from live_report.json).
         // If the model shape changes, update this center + half extents.
+        let table_collider_center = table_origin + Vec3::new(0.0, 0.2053, 0.0);
+        let table_collider_half = Vec3::new(1.0, 0.2053, 0.6);
         commands.spawn((
-            Transform::from_translation(table_origin + Vec3::new(0.0, 0.2053, 0.0)),
+            Transform::from_translation(table_collider_center),
             WorldCollider {
-                half_extents: Vec3::new(1.0, 0.2053, 0.6),
+                half_extents: table_collider_half,
             },
             InGameEntity,
         ));
+        static_colliders.push(StaticCollider {
+            center: table_collider_center,
+            half_extents: table_collider_half,
+        });
     }
+
+    commands.insert_resource(WorldCollisionGrid::from_colliders(static_colliders, 4.0));
 
     commands
         .spawn((

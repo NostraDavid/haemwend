@@ -1,5 +1,6 @@
 use super::types::GameAction;
 use bevy::prelude::*;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum MenuScreen {
@@ -124,6 +125,84 @@ pub(super) struct PlayerCollider {
 #[derive(Component, Clone, Copy)]
 pub(super) struct WorldCollider {
     pub(super) half_extents: Vec3,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(super) struct StaticCollider {
+    pub(super) center: Vec3,
+    pub(super) half_extents: Vec3,
+}
+
+#[derive(Resource, Debug)]
+pub(super) struct WorldCollisionGrid {
+    pub(super) cell_size: f32,
+    pub(super) cells: HashMap<IVec2, Vec<StaticCollider>>,
+}
+
+impl Default for WorldCollisionGrid {
+    fn default() -> Self {
+        Self {
+            cell_size: 4.0,
+            cells: HashMap::new(),
+        }
+    }
+}
+
+impl WorldCollisionGrid {
+    pub(super) fn from_colliders(colliders: Vec<StaticCollider>, cell_size: f32) -> Self {
+        let mut grid = Self {
+            cell_size: cell_size.max(0.25),
+            cells: HashMap::new(),
+        };
+
+        for collider in colliders {
+            let min_x =
+                ((collider.center.x - collider.half_extents.x) / grid.cell_size).floor() as i32;
+            let max_x =
+                ((collider.center.x + collider.half_extents.x) / grid.cell_size).floor() as i32;
+            let min_z =
+                ((collider.center.z - collider.half_extents.z) / grid.cell_size).floor() as i32;
+            let max_z =
+                ((collider.center.z + collider.half_extents.z) / grid.cell_size).floor() as i32;
+
+            for x in min_x..=max_x {
+                for z in min_z..=max_z {
+                    grid.cells
+                        .entry(IVec2::new(x, z))
+                        .or_default()
+                        .push(collider);
+                }
+            }
+        }
+
+        grid
+    }
+
+    pub(super) fn query_nearby(
+        &self,
+        center: Vec3,
+        radius: f32,
+        mut visit: impl FnMut(StaticCollider),
+    ) {
+        if self.cells.is_empty() {
+            return;
+        }
+
+        let min_x = ((center.x - radius) / self.cell_size).floor() as i32;
+        let max_x = ((center.x + radius) / self.cell_size).floor() as i32;
+        let min_z = ((center.z - radius) / self.cell_size).floor() as i32;
+        let max_z = ((center.z + radius) / self.cell_size).floor() as i32;
+
+        for x in min_x..=max_x {
+            for z in min_z..=max_z {
+                if let Some(cell_colliders) = self.cells.get(&IVec2::new(x, z)) {
+                    for collider in cell_colliders {
+                        visit(*collider);
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[derive(Component, Default)]

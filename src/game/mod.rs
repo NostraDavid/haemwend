@@ -82,6 +82,7 @@ pub fn run() {
         .insert_resource(scenario_catalog)
         .insert_resource(MenuState::default())
         .insert_resource(MouseLookCaptureState::default())
+        .insert_resource(WorldCollisionGrid::default())
         .insert_resource(ClearColor(Color::srgb(0.57, 0.70, 0.92)))
         .insert_resource(GlobalAmbientLight {
             color: Color::srgb(0.56, 0.61, 0.67),

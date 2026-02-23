@@ -13,7 +13,7 @@ pub(super) fn player_move(
         &PlayerCollider,
         &mut PlayerKinematics,
     )>,
-    world_colliders: Query<(&Transform, &WorldCollider), Without<Player>>,
+    world_collision_grid: Res<WorldCollisionGrid>,
 ) {
     if menu.open {
         return;
@@ -79,7 +79,7 @@ pub(super) fn player_move(
             next_position.y,
             next_position.z,
         );
-        if !would_collide(candidate, *player_collider, &world_colliders) {
+        if !would_collide(candidate, *player_collider, &world_collision_grid) {
             next_position.x = candidate.x;
         }
     }
@@ -90,7 +90,7 @@ pub(super) fn player_move(
             next_position.y,
             next_position.z + desired_delta.z,
         );
-        if !would_collide(candidate, *player_collider, &world_colliders) {
+        if !would_collide(candidate, *player_collider, &world_collision_grid) {
             next_position.z = candidate.z;
         }
     }
@@ -113,7 +113,7 @@ pub(super) fn player_move(
             vertical_start,
             proposed_vertical,
             *player_collider,
-            &world_colliders,
+            &world_collision_grid,
         ) {
             next_position.y = landing_top + player_collider.half_height;
             kinematics.vertical_velocity = 0.0;
@@ -126,7 +126,7 @@ pub(super) fn player_move(
         vertical_start,
         proposed_vertical,
         *player_collider,
-        &world_colliders,
+        &world_collision_grid,
     ) {
         next_position.y = ceiling_bottom - player_collider.half_height;
         kinematics.vertical_velocity = 0.0;
@@ -181,7 +181,7 @@ pub(super) fn third_person_camera(
 pub(super) fn update_player_blob_shadow(
     settings: Res<GameSettings>,
     player_query: Query<(&Transform, &PlayerCollider), (With<Player>, Without<PlayerBlobShadow>)>,
-    world_colliders: Query<(&GlobalTransform, &WorldCollider), Without<Player>>,
+    world_collision_grid: Res<WorldCollisionGrid>,
     mut shadow_query: Query<
         (&mut Transform, &MeshMaterial3d<StandardMaterial>),
         (With<PlayerBlobShadow>, Without<Player>),
@@ -200,24 +200,22 @@ pub(super) fn update_player_blob_shadow(
     };
 
     let player_pos = player_transform.translation;
-    let support_top = world_colliders
-        .iter()
-        .filter_map(|(world_transform, world_collider)| {
-            let world_pos = world_transform.translation();
-            if !intersects_disc_aabb_xz(
-                player_pos,
-                player_collider.radius,
-                world_pos,
-                world_collider.half_extents,
-            ) {
-                return None;
-            }
+    let mut support_top: f32 = 0.0;
+    world_collision_grid.query_nearby(player_pos, player_collider.radius + 1.0, |collider| {
+        if !intersects_disc_aabb_xz(
+            player_pos,
+            player_collider.radius,
+            collider.center,
+            collider.half_extents,
+        ) {
+            return;
+        }
 
-            let top = world_pos.y + world_collider.half_extents.y;
-            (top <= player_pos.y + 0.2).then_some(top)
-        })
-        .max_by(f32::total_cmp)
-        .unwrap_or(0.0);
+        let top = collider.center.y + collider.half_extents.y;
+        if top <= player_pos.y + 0.2 {
+            support_top = support_top.max(top);
+        }
+    });
 
     let feet_height = player_pos.y - player_collider.half_height;
     let hover_height = (feet_height - support_top).max(0.0);
@@ -480,81 +478,89 @@ pub(super) fn spawn_baked_shadow(
 pub(super) fn would_collide(
     player_center: Vec3,
     player_collider: PlayerCollider,
-    world_colliders: &Query<(&Transform, &WorldCollider), Without<Player>>,
+    world_collision_grid: &WorldCollisionGrid,
 ) -> bool {
-    world_colliders
-        .iter()
-        .any(|(world_transform, world_collider)| {
-            intersects_vertical_capsule_aabb(
-                player_center,
-                player_collider.radius,
-                player_collider.half_height,
-                world_transform.translation,
-                world_collider.half_extents,
-            )
-        })
+    let mut hit = false;
+    world_collision_grid.query_nearby(player_center, player_collider.radius + 0.1, |collider| {
+        if hit {
+            return;
+        }
+
+        hit = intersects_vertical_capsule_aabb(
+            player_center,
+            player_collider.radius,
+            player_collider.half_height,
+            collider.center,
+            collider.half_extents,
+        );
+    });
+    hit
 }
 
 pub(super) fn find_landing_top(
     previous_center: Vec3,
     proposed_center: Vec3,
     player_collider: PlayerCollider,
-    world_colliders: &Query<(&Transform, &WorldCollider), Without<Player>>,
+    world_collision_grid: &WorldCollisionGrid,
 ) -> Option<f32> {
     let previous_bottom = previous_center.y - player_collider.half_height;
     let proposed_bottom = proposed_center.y - player_collider.half_height;
     let epsilon = 0.0001;
+    let mut top_hit: Option<f32> = None;
 
-    world_colliders
-        .iter()
-        .filter_map(|(world_transform, world_collider)| {
-            if !intersects_disc_aabb_xz(
-                proposed_center,
-                player_collider.radius,
-                world_transform.translation,
-                world_collider.half_extents,
-            ) {
-                return None;
-            }
+    world_collision_grid.query_nearby(proposed_center, player_collider.radius + 0.1, |collider| {
+        if !intersects_disc_aabb_xz(
+            proposed_center,
+            player_collider.radius,
+            collider.center,
+            collider.half_extents,
+        ) {
+            return;
+        }
 
-            let collider_top = world_transform.translation.y + world_collider.half_extents.y;
-            let crossed_top = previous_bottom >= collider_top - epsilon
-                && proposed_bottom <= collider_top + epsilon;
+        let collider_top = collider.center.y + collider.half_extents.y;
+        let crossed_top =
+            previous_bottom >= collider_top - epsilon && proposed_bottom <= collider_top + epsilon;
 
-            crossed_top.then_some(collider_top)
-        })
-        .max_by(f32::total_cmp)
+        if crossed_top {
+            top_hit = Some(top_hit.map_or(collider_top, |best| best.max(collider_top)));
+        }
+    });
+
+    top_hit
 }
 
 pub(super) fn find_ceiling_bottom(
     previous_center: Vec3,
     proposed_center: Vec3,
     player_collider: PlayerCollider,
-    world_colliders: &Query<(&Transform, &WorldCollider), Without<Player>>,
+    world_collision_grid: &WorldCollisionGrid,
 ) -> Option<f32> {
     let previous_top = previous_center.y + player_collider.half_height;
     let proposed_top = proposed_center.y + player_collider.half_height;
     let epsilon = 0.0001;
+    let mut bottom_hit: Option<f32> = None;
 
-    world_colliders
-        .iter()
-        .filter_map(|(world_transform, world_collider)| {
-            if !intersects_disc_aabb_xz(
-                proposed_center,
-                player_collider.radius,
-                world_transform.translation,
-                world_collider.half_extents,
-            ) {
-                return None;
-            }
+    world_collision_grid.query_nearby(proposed_center, player_collider.radius + 0.1, |collider| {
+        if !intersects_disc_aabb_xz(
+            proposed_center,
+            player_collider.radius,
+            collider.center,
+            collider.half_extents,
+        ) {
+            return;
+        }
 
-            let collider_bottom = world_transform.translation.y - world_collider.half_extents.y;
-            let crossed_bottom = previous_top <= collider_bottom + epsilon
-                && proposed_top >= collider_bottom - epsilon;
+        let collider_bottom = collider.center.y - collider.half_extents.y;
+        let crossed_bottom =
+            previous_top <= collider_bottom + epsilon && proposed_top >= collider_bottom - epsilon;
 
-            crossed_bottom.then_some(collider_bottom)
-        })
-        .min_by(f32::total_cmp)
+        if crossed_bottom {
+            bottom_hit = Some(bottom_hit.map_or(collider_bottom, |best| best.min(collider_bottom)));
+        }
+    });
+
+    bottom_hit
 }
 
 pub(super) fn intersects_disc_aabb_xz(
