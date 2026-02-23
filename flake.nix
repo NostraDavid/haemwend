@@ -1,6 +1,11 @@
 # nix develop
 {
   description = "Rust development shell for haemwend";
+  nixConfig = {
+    extra-substituters = [
+      "https://nix-community.cachix.org"
+    ];
+  };
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
