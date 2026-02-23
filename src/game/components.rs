@@ -73,6 +73,17 @@ pub(super) struct BakedShadow;
 pub(super) struct SkyboxCube;
 
 #[derive(Component)]
+pub(super) struct GroundPlane;
+
+#[derive(Component, Clone, Copy)]
+pub(super) struct FogAlphaMaterialState {
+    pub(super) base_alpha: f32,
+    pub(super) current_alpha_factor: f32,
+    pub(super) original_alpha_mode: AlphaMode,
+    pub(super) original_fog_enabled: bool,
+}
+
+#[derive(Component)]
 pub(super) struct MenuRoot;
 
 #[derive(Component)]

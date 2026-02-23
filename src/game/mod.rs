@@ -117,6 +117,7 @@ pub fn run() {
                 animate_procedural_human,
                 update_player_blob_shadow,
                 third_person_camera,
+                apply_fog_alpha_materials,
             )
                 .chain()
                 .after(rebuild_menu_ui),

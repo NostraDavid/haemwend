@@ -220,6 +220,26 @@ fn fog_density(debug: &DebugSettings, anchor_offset: f32, squared: bool) -> f32 
     }
 }
 
+fn fog_transmittance_for_distance(distance: f32, debug: &DebugSettings, anchor_offset: f32) -> f32 {
+    let d = distance.max(0.0);
+    match debug.fog_curve {
+        FogCurveSetting::Linear => {
+            let (start, end) = fog_linear_bounds(debug, anchor_offset);
+            ((end - d) / (end - start).max(0.0001)).clamp(0.0, 1.0)
+        }
+        FogCurveSetting::Exponential => (-fog_density(debug, anchor_offset, false) * d)
+            .exp()
+            .clamp(0.0, 1.0),
+        FogCurveSetting::ExponentialSquared => {
+            let x = fog_density(debug, anchor_offset, true) * d;
+            (-(x * x)).exp().clamp(0.0, 1.0)
+        }
+        FogCurveSetting::Atmospheric => (-fog_density(debug, anchor_offset, false) * d)
+            .exp()
+            .clamp(0.0, 1.0),
+    }
+}
+
 fn distance_fog_from_debug(debug: &DebugSettings, anchor_offset: f32) -> DistanceFog {
     let (start, end) = fog_linear_bounds(debug, anchor_offset);
     let exp_density = fog_density(debug, anchor_offset, false);
@@ -374,11 +394,23 @@ pub(super) fn fog_debug_sliders_ui(
 
             let mut opacity = debug.fog_opacity;
             let opacity_changed = ui
-                .add(egui::Slider::new(&mut opacity, 0.0..=1.0).text("Opacity"))
+                .add(egui::Slider::new(&mut opacity, 0.0..=1.0).text("Fog alpha"))
                 .on_hover_text("Maximale dekkingsgraad van mist.")
                 .changed();
             if opacity_changed {
                 debug.fog_opacity = opacity.clamp(0.0, 1.0);
+                changed = true;
+            }
+
+            let mut hide_geometry = debug.fog_hide_geometry;
+            if ui
+                .checkbox(&mut hide_geometry, "Use alpha fog (no fog color)")
+                .on_hover_text(
+                    "Past fog-factor toe op materiaal-alpha (fade), in plaats van color-fog blend.",
+                )
+                .changed()
+            {
+                debug.fog_hide_geometry = hide_geometry;
                 changed = true;
             }
 
@@ -476,6 +508,9 @@ pub(super) fn fog_debug_sliders_ui(
                     ui.small("Exp/Exp2 gebruiken óf density óf visibility-model.");
                     ui.small("Clear offset voegt een heldere buffer rond de anchor toe.");
                     ui.small("Fog color + opacity sturen blendkleur en maximale dekking.");
+                    ui.small(
+                        "Use alpha fog schakelt color-fog uit en faded geometry via alpha/transmittance.",
+                    );
                     ui.small(
                         "Distance metric is hier camera-range (euclidisch), niet view-space z.",
                     );
@@ -942,6 +977,7 @@ pub(super) fn spawn_scenario_world(
         Mesh3d(ground_mesh),
         MeshMaterial3d(ground_mat),
         Transform::from_translation(ground_center),
+        GroundPlane,
         WorldCollider {
             half_extents: ground_half,
         },
@@ -1890,7 +1926,7 @@ pub(super) fn apply_runtime_settings(
         };
 
         let has_fog = camera_has_fog.get(camera).is_ok();
-        if debug.show_fog {
+        if debug.show_fog && !debug.fog_hide_geometry {
             commands
                 .entity(camera)
                 .insert(distance_fog_from_debug(&debug, anchor_offset));
@@ -1957,5 +1993,109 @@ pub(super) fn apply_runtime_settings(
         for entity in &mut render_mode_queries.p1() {
             commands.entity(entity).remove::<Wireframe>();
         }
+    }
+}
+
+pub(super) fn apply_fog_alpha_materials(
+    time: Res<Time>,
+    debug: Res<DebugSettings>,
+    camera_query: Query<&Transform, With<Camera3d>>,
+    player_transforms: Query<&Transform, With<Player>>,
+    mut mesh_materials: Query<
+        (
+            Entity,
+            &GlobalTransform,
+            Has<GroundPlane>,
+            &mut MeshMaterial3d<StandardMaterial>,
+            Option<&mut FogAlphaMaterialState>,
+        ),
+        (
+            With<Mesh3d>,
+            Without<SkyboxCube>,
+            Without<PlayerBlobShadow>,
+            Without<BakedShadow>,
+        ),
+    >,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut commands: Commands,
+) {
+    let Ok(camera_transform) = camera_query.single() else {
+        return;
+    };
+
+    let alpha_mode = debug.show_fog && debug.fog_hide_geometry;
+    let anchor_offset = if debug.fog_anchor == FogAnchorSetting::Character {
+        player_transforms
+            .single()
+            .map(|player_transform| {
+                camera_transform
+                    .translation
+                    .distance(player_transform.translation)
+            })
+            .unwrap_or(0.0)
+    } else {
+        0.0
+    };
+
+    let smooth = 1.0 - (-time.delta_secs() * 10.0).exp();
+
+    for (entity, transform, is_ground, mut material_handle, state) in &mut mesh_materials {
+        if !alpha_mode {
+            let Some(mut state) = state else {
+                continue;
+            };
+            let Some(material) = materials.get_mut(&material_handle.0) else {
+                continue;
+            };
+            let linear = material.base_color.to_linear();
+            material.base_color =
+                Color::linear_rgba(linear.red, linear.green, linear.blue, state.base_alpha);
+            material.alpha_mode = state.original_alpha_mode.clone();
+            material.fog_enabled = state.original_fog_enabled;
+            state.current_alpha_factor = 1.0;
+            continue;
+        }
+
+        if state.is_none() {
+            let Some(source_material) = materials.get(&material_handle.0).cloned() else {
+                continue;
+            };
+            let linear = source_material.base_color.to_linear();
+            let state = FogAlphaMaterialState {
+                base_alpha: linear.alpha,
+                current_alpha_factor: 1.0,
+                original_alpha_mode: source_material.alpha_mode.clone(),
+                original_fog_enabled: source_material.fog_enabled,
+            };
+            material_handle.0 = materials.add(source_material);
+            commands.entity(entity).insert(state);
+            continue;
+        }
+
+        let Some(mut state) = state else {
+            continue;
+        };
+        let Some(material) = materials.get_mut(&material_handle.0) else {
+            continue;
+        };
+
+        let distance = transform
+            .translation()
+            .distance(camera_transform.translation);
+        let transmittance = fog_transmittance_for_distance(distance, &debug, anchor_offset);
+        let fog_intensity = (1.0 - transmittance).clamp(0.0, 1.0);
+        let target_alpha_factor = 1.0 - fog_intensity * debug.fog_opacity.clamp(0.0, 1.0);
+        state.current_alpha_factor += (target_alpha_factor - state.current_alpha_factor) * smooth;
+        let target_alpha = (state.base_alpha * state.current_alpha_factor).clamp(0.0, 1.0);
+
+        let linear = material.base_color.to_linear();
+        material.base_color =
+            Color::linear_rgba(linear.red, linear.green, linear.blue, target_alpha);
+        material.alpha_mode = if is_ground {
+            AlphaMode::AlphaToCoverage
+        } else {
+            AlphaMode::Blend
+        };
+        material.fog_enabled = false;
     }
 }

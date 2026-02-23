@@ -144,6 +144,7 @@ pub(super) struct DebugSettings {
     pub(super) fog_clear_offset: f32,
     pub(super) fog_color: (f32, f32, f32),
     pub(super) fog_opacity: f32,
+    pub(super) fog_hide_geometry: bool,
     // Legacy field kept for backwards compatibility with older persisted configs.
     pub(super) fog_curvature: f32,
     pub(super) show_collision_shapes: bool,
@@ -169,6 +170,7 @@ impl Default for DebugSettings {
             fog_clear_offset: 0.0,
             fog_color: (0.62, 0.72, 0.84),
             fog_opacity: 1.0,
+            fog_hide_geometry: false,
             fog_curvature: 1.0,
             show_collision_shapes: false,
             show_animation_debug: false,
