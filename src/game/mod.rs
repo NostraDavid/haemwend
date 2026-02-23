@@ -2,6 +2,8 @@ use bevy::app::AppExit;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll};
 use bevy::light::{NotShadowCaster, NotShadowReceiver};
+use bevy::pbr::wireframe::Wireframe;
+use bevy::pbr::wireframe::WireframePlugin;
 use bevy::prelude::*;
 use bevy::window::{CursorGrabMode, CursorOptions, PresentMode, PrimaryWindow, WindowResolution};
 use std::env;
@@ -68,6 +70,7 @@ pub fn run() {
                 wait_duration: Duration::from_secs(2),
                 ..default()
             },
+            WireframePlugin::default(),
         ))
         .insert_resource(initial_settings)
         .insert_resource(initial_keybinds)
@@ -110,5 +113,6 @@ pub fn run() {
                 .after(rebuild_menu_ui),
         )
         .add_systems(Update, update_performance_overlay)
+        .add_systems(Update, draw_debug_geometry)
         .run();
 }

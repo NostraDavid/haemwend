@@ -95,6 +95,9 @@ pub(super) struct DebugSettings {
     pub(super) show_performance_overlay: bool,
     pub(super) show_baked_shadows: bool,
     pub(super) show_fog: bool,
+    pub(super) show_collision_shapes: bool,
+    pub(super) show_wireframe: bool,
+    pub(super) show_world_axes: bool,
 }
 
 impl Default for DebugSettings {
@@ -103,6 +106,9 @@ impl Default for DebugSettings {
             show_performance_overlay: true,
             show_baked_shadows: true,
             show_fog: true,
+            show_collision_shapes: false,
+            show_wireframe: false,
+            show_world_axes: false,
         }
     }
 }

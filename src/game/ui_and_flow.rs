@@ -536,6 +536,18 @@ pub(super) fn handle_menu_buttons(
                         debug.show_fog = !debug.show_fog;
                         should_save = true;
                     }
+                    MenuButtonAction::ToggleCollisionShapes => {
+                        debug.show_collision_shapes = !debug.show_collision_shapes;
+                        should_save = true;
+                    }
+                    MenuButtonAction::ToggleWireframe => {
+                        debug.show_wireframe = !debug.show_wireframe;
+                        should_save = true;
+                    }
+                    MenuButtonAction::ToggleWorldAxes => {
+                        debug.show_world_axes = !debug.show_world_axes;
+                        should_save = true;
+                    }
                     MenuButtonAction::StartRebind(action) => {
                         menu.screen = MenuScreen::Keybinds;
                         menu.awaiting_rebind = Some(action);
@@ -847,6 +859,46 @@ pub(super) fn rebuild_menu_ui(
                         panel
                             .spawn((
                                 Button,
+                                MenuButton(MenuButtonAction::ToggleCollisionShapes),
+                                menu_button_node(),
+                                menu_button_normal_color(),
+                            ))
+                            .with_child(Text::new(format!(
+                                "Collision Shapes: {}",
+                                if debug.show_collision_shapes {
+                                    "On"
+                                } else {
+                                    "Off"
+                                }
+                            )));
+
+                        panel
+                            .spawn((
+                                Button,
+                                MenuButton(MenuButtonAction::ToggleWireframe),
+                                menu_button_node(),
+                                menu_button_normal_color(),
+                            ))
+                            .with_child(Text::new(format!(
+                                "Model Lines (Wireframe): {}",
+                                if debug.show_wireframe { "On" } else { "Off" }
+                            )));
+
+                        panel
+                            .spawn((
+                                Button,
+                                MenuButton(MenuButtonAction::ToggleWorldAxes),
+                                menu_button_node(),
+                                menu_button_normal_color(),
+                            ))
+                            .with_child(Text::new(format!(
+                                "World Axes: {}",
+                                if debug.show_world_axes { "On" } else { "Off" }
+                            )));
+
+                        panel
+                            .spawn((
+                                Button,
                                 MenuButton(MenuButtonAction::BackMain),
                                 menu_button_node(),
                                 menu_button_normal_color(),
@@ -984,6 +1036,26 @@ pub(super) fn apply_runtime_settings(
         Query<&mut Visibility, (With<BakedShadow>, Without<PlayerBlobShadow>)>,
         Query<&mut Visibility, With<PerformanceOverlayText>>,
     )>,
+    mut render_mode_queries: ParamSet<(
+        Query<
+            Entity,
+            (
+                With<Mesh3d>,
+                Without<Wireframe>,
+                Without<PlayerBlobShadow>,
+                Without<BakedShadow>,
+            ),
+        >,
+        Query<
+            Entity,
+            (
+                With<Mesh3d>,
+                With<Wireframe>,
+                Without<PlayerBlobShadow>,
+                Without<BakedShadow>,
+            ),
+        >,
+    )>,
     camera_has_fog: Query<(), (With<Camera3d>, With<DistanceFog>)>,
     mut commands: Commands,
 ) {
@@ -1055,5 +1127,15 @@ pub(super) fn apply_runtime_settings(
         } else {
             Visibility::Hidden
         };
+    }
+
+    if debug.show_wireframe {
+        for entity in &mut render_mode_queries.p0() {
+            commands.entity(entity).insert(Wireframe);
+        }
+    } else {
+        for entity in &mut render_mode_queries.p1() {
+            commands.entity(entity).remove::<Wireframe>();
+        }
     }
 }

@@ -250,6 +250,85 @@ pub(super) fn update_performance_overlay(
     }
 }
 
+pub(super) fn draw_debug_geometry(
+    debug: Res<DebugSettings>,
+    player_query: Query<(&Transform, &PlayerCollider), With<Player>>,
+    world_query: Query<(&Transform, &WorldCollider), Without<Player>>,
+    mut gizmos: Gizmos,
+) {
+    if !debug.show_collision_shapes && !debug.show_world_axes {
+        return;
+    }
+
+    if debug.show_world_axes {
+        let len = 4.0;
+        gizmos.line(
+            Vec3::ZERO,
+            Vec3::new(len, 0.0, 0.0),
+            Color::srgb(0.9, 0.22, 0.22),
+        );
+        gizmos.line(
+            Vec3::ZERO,
+            Vec3::new(0.0, len, 0.0),
+            Color::srgb(0.22, 0.9, 0.22),
+        );
+        gizmos.line(
+            Vec3::ZERO,
+            Vec3::new(0.0, 0.0, len),
+            Color::srgb(0.22, 0.52, 0.95),
+        );
+    }
+
+    if !debug.show_collision_shapes {
+        return;
+    }
+
+    for (transform, collider) in &world_query {
+        draw_aabb_lines(
+            &mut gizmos,
+            transform.translation,
+            collider.half_extents,
+            Color::srgba(1.0, 0.9, 0.35, 0.95),
+        );
+    }
+
+    if let Ok((transform, collider)) = player_query.single() {
+        draw_aabb_lines(
+            &mut gizmos,
+            transform.translation,
+            collider.half_extents,
+            Color::srgba(0.25, 1.0, 1.0, 0.95),
+        );
+    }
+}
+
+fn draw_aabb_lines(gizmos: &mut Gizmos, center: Vec3, half: Vec3, color: Color) {
+    let min = center - half;
+    let max = center + half;
+
+    let p000 = Vec3::new(min.x, min.y, min.z);
+    let p001 = Vec3::new(min.x, min.y, max.z);
+    let p010 = Vec3::new(min.x, max.y, min.z);
+    let p011 = Vec3::new(min.x, max.y, max.z);
+    let p100 = Vec3::new(max.x, min.y, min.z);
+    let p101 = Vec3::new(max.x, min.y, max.z);
+    let p110 = Vec3::new(max.x, max.y, min.z);
+    let p111 = Vec3::new(max.x, max.y, max.z);
+
+    gizmos.line(p000, p001, color);
+    gizmos.line(p000, p010, color);
+    gizmos.line(p000, p100, color);
+    gizmos.line(p001, p011, color);
+    gizmos.line(p001, p101, color);
+    gizmos.line(p010, p011, color);
+    gizmos.line(p010, p110, color);
+    gizmos.line(p100, p101, color);
+    gizmos.line(p100, p110, color);
+    gizmos.line(p111, p101, color);
+    gizmos.line(p111, p110, color);
+    gizmos.line(p111, p011, color);
+}
+
 pub(super) fn sync_mouse_capture_with_focus(
     flow: Res<GameFlowState>,
     menu: Res<MenuState>,
