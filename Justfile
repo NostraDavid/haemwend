@@ -12,6 +12,56 @@ run-release:
 run-hot:
   ./scripts/dev_game.sh
 
+blender-ui:
+  cargo run --bin blender_model_editor_ui
+
+blender-ui-hot:
+  cargo watch -w src -w config -w Cargo.toml -w Cargo.lock -x "run --features bevy/file_watcher --bin blender_model_editor_ui"
+
+blender-table-validate:
+  blender -b --factory-startup --python assets/blender_ai/table.py -- --validate
+
+blender-table-artifacts out_dir="assets/blender_ai/_artifacts":
+  ts=$(date +"%Y%m%d_%H%M%S"); \
+  render="{{out_dir}}/table_render_${ts}.png"; \
+  report="{{out_dir}}/table_report_${ts}.json"; \
+  mkdir -p "{{out_dir}}"; \
+  blender -b --factory-startup --python assets/blender_ai/table.py -- --validate --render "${render}" --report-json "${report}"; \
+  echo "render: ${render}"; \
+  echo "report: ${report}"
+
+blender-table-tune opts="" out_dir="assets/blender_ai/_artifacts":
+  ts=$(date +"%Y%m%d_%H%M%S"); \
+  render="{{out_dir}}/table_render_${ts}.png"; \
+  report="{{out_dir}}/table_report_${ts}.json"; \
+  mkdir -p "{{out_dir}}"; \
+  blender -b --factory-startup --python assets/blender_ai/table.py -- \
+    --validate \
+    {{opts}} \
+    --render "${render}" \
+    --report-json "${report}"; \
+  echo "render: ${render}"; \
+  echo "report: ${report}"
+
+# generic export:
+#   just blender-export <script.py> [out.glb]
+# examples:
+#   just blender-export
+#   just blender-export assets/blender_ai/table.py assets/models/table_v2.glb
+blender-export script="assets/blender_ai/table.py" out="" opts="":
+  name=$(basename "{{script}}" .py); \
+  out_path="{{out}}"; \
+  if [ -z "${out_path}" ]; then out_path="assets/models/${name}.glb"; fi; \
+  blender -b --factory-startup --python "{{script}}" -- --validate {{opts}} --export-glb "${out_path}"; \
+  echo "glb: ${out_path}"
+
+blender-table-export out="" opts="":
+  name=$(basename "assets/blender_ai/table.py" .py); \
+  out_path="{{out}}"; \
+  if [ -z "${out_path}" ]; then out_path="assets/models/${name}.glb"; fi; \
+  blender -b --factory-startup --python "assets/blender_ai/table.py" -- --validate {{opts}} --export-glb "${out_path}"; \
+  echo "glb: ${out_path}"
+
 check:
   cargo check
 

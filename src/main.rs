@@ -4,8 +4,8 @@ use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll};
 use bevy::light::{NotShadowCaster, NotShadowReceiver};
 use bevy::prelude::*;
 use bevy::window::{
-    CursorGrabMode, CursorOptions, MonitorSelection, PresentMode, PrimaryWindow, VideoModeSelection,
-    WindowMode, WindowResolution,
+    CursorGrabMode, CursorOptions, MonitorSelection, PresentMode, PrimaryWindow,
+    VideoModeSelection, WindowMode, WindowResolution,
 };
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -307,8 +307,7 @@ impl GameKeybinds {
         for action in ACTION_ORDER {
             if self.keys_for(action).is_empty() {
                 let fallback = GameKeybinds::default();
-                self.keys_for_mut(action)
-                    .push(fallback.keys_for(action)[0]);
+                self.keys_for_mut(action).push(fallback.keys_for(action)[0]);
             }
         }
     }
@@ -588,7 +587,10 @@ fn main() {
             affects_lightmapped_meshes: true,
         })
         .add_systems(Startup, setup_start_menu)
-        .add_systems(Update, (handle_start_menu_buttons, load_pending_scenario).chain())
+        .add_systems(
+            Update,
+            (handle_start_menu_buttons, load_pending_scenario).chain(),
+        )
         .add_systems(
             Update,
             (
@@ -907,11 +909,7 @@ fn spawn_scenario_world(
                     commands,
                     &baked_shadow_mesh,
                     &baked_shadow_mat,
-                    Vec3::new(
-                        x as f32 * crate_spacing,
-                        0.011,
-                        z as f32 * crate_spacing,
-                    ),
+                    Vec3::new(x as f32 * crate_spacing, 0.011, z as f32 * crate_spacing),
                     Vec2::new(1.25, 1.25),
                 );
             }
@@ -1169,10 +1167,7 @@ fn capture_rebind_input(
     }
 }
 
-fn capture_keybind_filter_input(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut menu: ResMut<MenuState>,
-) {
+fn capture_keybind_filter_input(keys: Res<ButtonInput<KeyCode>>, mut menu: ResMut<MenuState>) {
     if !menu.open || menu.screen != MenuScreen::Keybinds || menu.awaiting_rebind.is_some() {
         return;
     }
@@ -1497,9 +1492,10 @@ fn apply_runtime_settings(
 
     let mut window = primary_window.into_inner();
     window.mode = settings.display_mode.to_window_mode();
-    window
-        .resolution
-        .set(settings.resolution_width as f32, settings.resolution_height as f32);
+    window.resolution.set(
+        settings.resolution_width as f32,
+        settings.resolution_height as f32,
+    );
 
     if let Ok(camera) = camera_entities.single() {
         if settings.msaa_enabled {
@@ -1549,7 +1545,12 @@ fn player_move(
     menu: Res<MenuState>,
     keybinds: Res<GameKeybinds>,
     camera_query: Query<&ThirdPersonCameraRig, With<Camera3d>>,
-    mut player_query: Query<(&mut Transform, &Player, &PlayerCollider, &mut PlayerKinematics)>,
+    mut player_query: Query<(
+        &mut Transform,
+        &Player,
+        &PlayerCollider,
+        &mut PlayerKinematics,
+    )>,
     world_colliders: Query<(&Transform, &WorldCollider), Without<Player>>,
 ) {
     if menu.open {
@@ -1573,7 +1574,8 @@ fn player_move(
     let dt = time.delta_secs();
     if !rmb_held {
         let turn_axis = (keybinds.action_pressed(&keys, GameAction::TurnRight) as i8
-            - keybinds.action_pressed(&keys, GameAction::TurnLeft) as i8) as f32;
+            - keybinds.action_pressed(&keys, GameAction::TurnLeft) as i8)
+            as f32;
         if turn_axis != 0.0 {
             transform.rotate_y(-turn_axis * player.turn_speed * dt);
         }
@@ -1583,7 +1585,8 @@ fn player_move(
     let right = transform.rotation * Vec3::X;
 
     let forward_axis = (keybinds.action_pressed(&keys, GameAction::MoveForward) as i8
-        - keybinds.action_pressed(&keys, GameAction::MoveBackward) as i8) as f32;
+        - keybinds.action_pressed(&keys, GameAction::MoveBackward) as i8)
+        as f32;
 
     let strafe_axis = if rmb_held {
         let strafe_right = keybinds.action_pressed(&keys, GameAction::StrafeRight)
@@ -1609,14 +1612,22 @@ fn player_move(
     let mut next_position = transform.translation;
 
     if desired_delta.x != 0.0 {
-        let candidate = Vec3::new(next_position.x + desired_delta.x, next_position.y, next_position.z);
+        let candidate = Vec3::new(
+            next_position.x + desired_delta.x,
+            next_position.y,
+            next_position.z,
+        );
         if !would_collide(candidate, player_collider.half_extents, &world_colliders) {
             next_position.x = candidate.x;
         }
     }
 
     if desired_delta.z != 0.0 {
-        let candidate = Vec3::new(next_position.x, next_position.y, next_position.z + desired_delta.z);
+        let candidate = Vec3::new(
+            next_position.x,
+            next_position.y,
+            next_position.z + desired_delta.z,
+        );
         if !would_collide(candidate, player_collider.half_extents, &world_colliders) {
             next_position.z = candidate.z;
         }
@@ -1694,8 +1705,8 @@ fn third_person_camera(
         rig.pitch -= mouse_delta.y * rig.look_sensitivity;
         rig.pitch = rig.pitch.clamp(-1.2, 0.6);
     }
-    rig.distance =
-        (rig.distance - mouse_scroll.delta.y * rig.zoom_sensitivity).clamp(rig.min_distance, rig.max_distance);
+    rig.distance = (rig.distance - mouse_scroll.delta.y * rig.zoom_sensitivity)
+        .clamp(rig.min_distance, rig.max_distance);
 
     let target = player_transform.translation;
     let rotation = Quat::from_euler(EulerRot::YXZ, rig.yaw, rig.pitch, 0.0);
@@ -1731,8 +1742,10 @@ fn update_player_blob_shadow(
         .iter()
         .filter_map(|(world_transform, world_collider)| {
             let world_pos = world_transform.translation();
-            let inside_x = (player_pos.x - world_pos.x).abs() <= world_collider.half_extents.x + 0.45;
-            let inside_z = (player_pos.z - world_pos.z).abs() <= world_collider.half_extents.z + 0.45;
+            let inside_x =
+                (player_pos.x - world_pos.x).abs() <= world_collider.half_extents.x + 0.45;
+            let inside_z =
+                (player_pos.z - world_pos.z).abs() <= world_collider.half_extents.z + 0.45;
             if !inside_x || !inside_z {
                 return None;
             }
@@ -1858,14 +1871,16 @@ fn would_collide(
     player_half_extents: Vec3,
     world_colliders: &Query<(&Transform, &WorldCollider), Without<Player>>,
 ) -> bool {
-    world_colliders.iter().any(|(world_transform, world_collider)| {
-        intersects_aabb(
-            player_center,
-            player_half_extents,
-            world_transform.translation,
-            world_collider.half_extents,
-        )
-    })
+    world_colliders
+        .iter()
+        .any(|(world_transform, world_collider)| {
+            intersects_aabb(
+                player_center,
+                player_half_extents,
+                world_transform.translation,
+                world_collider.half_extents,
+            )
+        })
 }
 
 fn find_landing_top(
@@ -1891,8 +1906,8 @@ fn find_landing_top(
             }
 
             let collider_top = world_transform.translation.y + world_collider.half_extents.y;
-            let crossed_top =
-                previous_bottom >= collider_top - epsilon && proposed_bottom <= collider_top + epsilon;
+            let crossed_top = previous_bottom >= collider_top - epsilon
+                && proposed_bottom <= collider_top + epsilon;
 
             crossed_top.then_some(collider_top)
         })
@@ -1922,20 +1937,30 @@ fn find_ceiling_bottom(
             }
 
             let collider_bottom = world_transform.translation.y - world_collider.half_extents.y;
-            let crossed_bottom =
-                previous_top <= collider_bottom + epsilon && proposed_top >= collider_bottom - epsilon;
+            let crossed_bottom = previous_top <= collider_bottom + epsilon
+                && proposed_top >= collider_bottom - epsilon;
 
             crossed_bottom.then_some(collider_bottom)
         })
         .min_by(f32::total_cmp)
 }
 
-fn intersects_xz(a_center: Vec3, a_half_extents: Vec3, b_center: Vec3, b_half_extents: Vec3) -> bool {
+fn intersects_xz(
+    a_center: Vec3,
+    a_half_extents: Vec3,
+    b_center: Vec3,
+    b_half_extents: Vec3,
+) -> bool {
     (a_center.x - b_center.x).abs() < (a_half_extents.x + b_half_extents.x)
         && (a_center.z - b_center.z).abs() < (a_half_extents.z + b_half_extents.z)
 }
 
-fn intersects_aabb(a_center: Vec3, a_half_extents: Vec3, b_center: Vec3, b_half_extents: Vec3) -> bool {
+fn intersects_aabb(
+    a_center: Vec3,
+    a_half_extents: Vec3,
+    b_center: Vec3,
+    b_half_extents: Vec3,
+) -> bool {
     (a_center.x - b_center.x).abs() < (a_half_extents.x + b_half_extents.x)
         && (a_center.y - b_center.y).abs() < (a_half_extents.y + b_half_extents.y)
         && (a_center.z - b_center.z).abs() < (a_half_extents.z + b_half_extents.z)
@@ -2028,7 +2053,8 @@ fn default_scenarios() -> Vec<ScenarioDefinition> {
         ScenarioDefinition {
             id: "gauntlet".to_string(),
             name: "Stone Gauntlet".to_string(),
-            description: "Smalle route met dichte obstakels voor korte, intensieve runs.".to_string(),
+            description: "Smalle route met dichte obstakels voor korte, intensieve runs."
+                .to_string(),
             ground_extent: 72.0,
             crate_grid_radius: 5,
             crate_spacing: 2.2,
@@ -2121,7 +2147,10 @@ fn write_default_scenarios_to_file(path: &Path) -> bool {
         };
 
     if let Err(err) = fs::write(path, serialized) {
-        eprintln!("Kon scenario-bestand niet opslaan ({}): {err}", path.display());
+        eprintln!(
+            "Kon scenario-bestand niet opslaan ({}): {err}",
+            path.display()
+        );
         return false;
     }
 
@@ -2133,7 +2162,10 @@ fn load_scenarios_from_file(path: &Path) -> Vec<ScenarioDefinition> {
     let content = match fs::read_to_string(path) {
         Ok(content) => content,
         Err(err) => {
-            eprintln!("Kon scenario-bestand niet lezen ({}): {err}", path.display());
+            eprintln!(
+                "Kon scenario-bestand niet lezen ({}): {err}",
+                path.display()
+            );
             return Vec::new();
         }
     };
@@ -2179,7 +2211,10 @@ fn load_scenarios_from_dir(path: &Path) -> Vec<ScenarioDefinition> {
         let content = match fs::read_to_string(&file) {
             Ok(content) => content,
             Err(err) => {
-                eprintln!("Kon scenario-bestand niet lezen ({}): {err}", file.display());
+                eprintln!(
+                    "Kon scenario-bestand niet lezen ({}): {err}",
+                    file.display()
+                );
                 continue;
             }
         };
