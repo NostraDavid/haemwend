@@ -79,7 +79,7 @@ pub(super) fn player_move(
             next_position.y,
             next_position.z,
         );
-        if !would_collide(candidate, player_collider.half_extents, &world_colliders) {
+        if !would_collide(candidate, *player_collider, &world_colliders) {
             next_position.x = candidate.x;
         }
     }
@@ -90,7 +90,7 @@ pub(super) fn player_move(
             next_position.y,
             next_position.z + desired_delta.z,
         );
-        if !would_collide(candidate, player_collider.half_extents, &world_colliders) {
+        if !would_collide(candidate, *player_collider, &world_colliders) {
             next_position.z = candidate.z;
         }
     }
@@ -112,10 +112,10 @@ pub(super) fn player_move(
         if let Some(landing_top) = find_landing_top(
             vertical_start,
             proposed_vertical,
-            player_collider.half_extents,
+            *player_collider,
             &world_colliders,
         ) {
-            next_position.y = landing_top + player_collider.half_extents.y;
+            next_position.y = landing_top + player_collider.half_height;
             kinematics.vertical_velocity = 0.0;
             kinematics.grounded = true;
         } else {
@@ -125,10 +125,10 @@ pub(super) fn player_move(
     } else if let Some(ceiling_bottom) = find_ceiling_bottom(
         vertical_start,
         proposed_vertical,
-        player_collider.half_extents,
+        *player_collider,
         &world_colliders,
     ) {
-        next_position.y = ceiling_bottom - player_collider.half_extents.y;
+        next_position.y = ceiling_bottom - player_collider.half_height;
         kinematics.vertical_velocity = 0.0;
         kinematics.grounded = false;
     } else {
@@ -204,11 +204,12 @@ pub(super) fn update_player_blob_shadow(
         .iter()
         .filter_map(|(world_transform, world_collider)| {
             let world_pos = world_transform.translation();
-            let inside_x =
-                (player_pos.x - world_pos.x).abs() <= world_collider.half_extents.x + 0.45;
-            let inside_z =
-                (player_pos.z - world_pos.z).abs() <= world_collider.half_extents.z + 0.45;
-            if !inside_x || !inside_z {
+            if !intersects_disc_aabb_xz(
+                player_pos,
+                player_collider.radius,
+                world_pos,
+                world_collider.half_extents,
+            ) {
                 return None;
             }
 
@@ -218,7 +219,7 @@ pub(super) fn update_player_blob_shadow(
         .max_by(f32::total_cmp)
         .unwrap_or(0.0);
 
-    let feet_height = player_pos.y - player_collider.half_extents.y;
+    let feet_height = player_pos.y - player_collider.half_height;
     let hover_height = (feet_height - support_top).max(0.0);
     let fade = (1.0 - hover_height / 6.0).clamp(0.0, 1.0);
     let radius = (0.95 - hover_height * 0.08).clamp(0.55, 0.95);
@@ -293,10 +294,11 @@ pub(super) fn draw_debug_geometry(
     }
 
     if let Ok((transform, collider)) = player_query.single() {
-        draw_aabb_lines(
+        draw_capsule_lines(
             &mut gizmos,
             transform.translation,
-            collider.half_extents,
+            collider.radius,
+            collider.half_height,
             Color::srgba(0.25, 1.0, 1.0, 0.95),
         );
     }
@@ -327,6 +329,74 @@ fn draw_aabb_lines(gizmos: &mut Gizmos, center: Vec3, half: Vec3, color: Color) 
     gizmos.line(p111, p101, color);
     gizmos.line(p111, p110, color);
     gizmos.line(p111, p011, color);
+}
+
+fn draw_capsule_lines(
+    gizmos: &mut Gizmos,
+    center: Vec3,
+    radius: f32,
+    half_height: f32,
+    color: Color,
+) {
+    let ring_segments = 20;
+    let cyl_half = (half_height - radius).max(0.0);
+    let top_y = center.y + cyl_half;
+    let bottom_y = center.y - cyl_half;
+    let vertical_top = center.y + half_height;
+    let vertical_bottom = center.y - half_height;
+
+    draw_ring(
+        gizmos,
+        Vec3::new(center.x, top_y, center.z),
+        radius,
+        color,
+        ring_segments,
+    );
+    draw_ring(
+        gizmos,
+        Vec3::new(center.x, bottom_y, center.z),
+        radius,
+        color,
+        ring_segments,
+    );
+
+    let cardinal = [
+        Vec3::new(radius, 0.0, 0.0),
+        Vec3::new(-radius, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, radius),
+        Vec3::new(0.0, 0.0, -radius),
+    ];
+    for offset in cardinal {
+        gizmos.line(
+            Vec3::new(center.x + offset.x, top_y, center.z + offset.z),
+            Vec3::new(center.x + offset.x, bottom_y, center.z + offset.z),
+            color,
+        );
+        gizmos.line(
+            Vec3::new(center.x + offset.x, top_y, center.z + offset.z),
+            Vec3::new(center.x, vertical_top, center.z),
+            color,
+        );
+        gizmos.line(
+            Vec3::new(center.x + offset.x, bottom_y, center.z + offset.z),
+            Vec3::new(center.x, vertical_bottom, center.z),
+            color,
+        );
+    }
+}
+
+fn draw_ring(gizmos: &mut Gizmos, center: Vec3, radius: f32, color: Color, segments: usize) {
+    if segments < 3 {
+        return;
+    }
+
+    let mut prev = center + Vec3::new(radius, 0.0, 0.0);
+    for i in 1..=segments {
+        let t = (i as f32 / segments as f32) * std::f32::consts::TAU;
+        let point = center + Vec3::new(radius * t.cos(), 0.0, radius * t.sin());
+        gizmos.line(prev, point, color);
+        prev = point;
+    }
 }
 
 pub(super) fn sync_mouse_capture_with_focus(
@@ -409,15 +479,16 @@ pub(super) fn spawn_baked_shadow(
 
 pub(super) fn would_collide(
     player_center: Vec3,
-    player_half_extents: Vec3,
+    player_collider: PlayerCollider,
     world_colliders: &Query<(&Transform, &WorldCollider), Without<Player>>,
 ) -> bool {
     world_colliders
         .iter()
         .any(|(world_transform, world_collider)| {
-            intersects_aabb(
+            intersects_vertical_capsule_aabb(
                 player_center,
-                player_half_extents,
+                player_collider.radius,
+                player_collider.half_height,
                 world_transform.translation,
                 world_collider.half_extents,
             )
@@ -427,19 +498,19 @@ pub(super) fn would_collide(
 pub(super) fn find_landing_top(
     previous_center: Vec3,
     proposed_center: Vec3,
-    player_half_extents: Vec3,
+    player_collider: PlayerCollider,
     world_colliders: &Query<(&Transform, &WorldCollider), Without<Player>>,
 ) -> Option<f32> {
-    let previous_bottom = previous_center.y - player_half_extents.y;
-    let proposed_bottom = proposed_center.y - player_half_extents.y;
+    let previous_bottom = previous_center.y - player_collider.half_height;
+    let proposed_bottom = proposed_center.y - player_collider.half_height;
     let epsilon = 0.0001;
 
     world_colliders
         .iter()
         .filter_map(|(world_transform, world_collider)| {
-            if !intersects_xz(
+            if !intersects_disc_aabb_xz(
                 proposed_center,
-                player_half_extents,
+                player_collider.radius,
                 world_transform.translation,
                 world_collider.half_extents,
             ) {
@@ -458,19 +529,19 @@ pub(super) fn find_landing_top(
 pub(super) fn find_ceiling_bottom(
     previous_center: Vec3,
     proposed_center: Vec3,
-    player_half_extents: Vec3,
+    player_collider: PlayerCollider,
     world_colliders: &Query<(&Transform, &WorldCollider), Without<Player>>,
 ) -> Option<f32> {
-    let previous_top = previous_center.y + player_half_extents.y;
-    let proposed_top = proposed_center.y + player_half_extents.y;
+    let previous_top = previous_center.y + player_collider.half_height;
+    let proposed_top = proposed_center.y + player_collider.half_height;
     let epsilon = 0.0001;
 
     world_colliders
         .iter()
         .filter_map(|(world_transform, world_collider)| {
-            if !intersects_xz(
+            if !intersects_disc_aabb_xz(
                 proposed_center,
-                player_half_extents,
+                player_collider.radius,
                 world_transform.translation,
                 world_collider.half_extents,
             ) {
@@ -486,23 +557,44 @@ pub(super) fn find_ceiling_bottom(
         .min_by(f32::total_cmp)
 }
 
-pub(super) fn intersects_xz(
-    a_center: Vec3,
-    a_half_extents: Vec3,
-    b_center: Vec3,
-    b_half_extents: Vec3,
+pub(super) fn intersects_disc_aabb_xz(
+    disc_center: Vec3,
+    disc_radius: f32,
+    box_center: Vec3,
+    box_half_extents: Vec3,
 ) -> bool {
-    (a_center.x - b_center.x).abs() < (a_half_extents.x + b_half_extents.x)
-        && (a_center.z - b_center.z).abs() < (a_half_extents.z + b_half_extents.z)
+    let dx = (disc_center.x - box_center.x).abs() - box_half_extents.x;
+    let dz = (disc_center.z - box_center.z).abs() - box_half_extents.z;
+    let outside_x = dx.max(0.0);
+    let outside_z = dz.max(0.0);
+    outside_x * outside_x + outside_z * outside_z < disc_radius * disc_radius
 }
 
-pub(super) fn intersects_aabb(
-    a_center: Vec3,
-    a_half_extents: Vec3,
-    b_center: Vec3,
-    b_half_extents: Vec3,
+pub(super) fn intersects_vertical_capsule_aabb(
+    capsule_center: Vec3,
+    capsule_radius: f32,
+    capsule_half_height: f32,
+    box_center: Vec3,
+    box_half_extents: Vec3,
 ) -> bool {
-    (a_center.x - b_center.x).abs() < (a_half_extents.x + b_half_extents.x)
-        && (a_center.y - b_center.y).abs() < (a_half_extents.y + b_half_extents.y)
-        && (a_center.z - b_center.z).abs() < (a_half_extents.z + b_half_extents.z)
+    let dx = (capsule_center.x - box_center.x).abs() - box_half_extents.x;
+    let dz = (capsule_center.z - box_center.z).abs() - box_half_extents.z;
+    let outside_x = dx.max(0.0);
+    let outside_z = dz.max(0.0);
+
+    let capsule_seg_min = capsule_center.y - (capsule_half_height - capsule_radius).max(0.0);
+    let capsule_seg_max = capsule_center.y + (capsule_half_height - capsule_radius).max(0.0);
+    let box_min = box_center.y - box_half_extents.y;
+    let box_max = box_center.y + box_half_extents.y;
+
+    let outside_y = if capsule_seg_max < box_min {
+        box_min - capsule_seg_max
+    } else if capsule_seg_min > box_max {
+        capsule_seg_min - box_max
+    } else {
+        0.0
+    };
+
+    outside_x * outside_x + outside_y * outside_y + outside_z * outside_z
+        < capsule_radius * capsule_radius
 }

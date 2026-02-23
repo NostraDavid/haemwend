@@ -117,7 +117,8 @@ pub(super) enum MenuButtonAction {
 
 #[derive(Component, Clone, Copy)]
 pub(super) struct PlayerCollider {
-    pub(super) half_extents: Vec3,
+    pub(super) radius: f32,
+    pub(super) half_height: f32,
 }
 
 #[derive(Component, Clone, Copy)]

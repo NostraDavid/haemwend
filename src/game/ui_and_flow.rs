@@ -183,7 +183,10 @@ pub(super) fn spawn_scenario_world(
     let tower_z = scenario.tower_z;
     let sun_position = scenario.sun_vec3();
 
-    let player_mesh = meshes.add(Cuboid::new(0.8, 1.8, 0.8));
+    let player_radius: f32 = 0.35;
+    let player_half_height: f32 = 0.9;
+    let player_cylinder_length = (player_half_height * 2.0 - player_radius * 2.0).max(0.0_f32);
+    let player_mesh = meshes.add(Capsule3d::new(player_radius, player_cylinder_length));
     let player_mat = materials.add(StandardMaterial {
         base_color: Color::srgb(0.91, 0.84, 0.64),
         perceptual_roughness: 0.88,
@@ -209,10 +212,11 @@ pub(super) fn spawn_scenario_world(
         Player::default(),
         Mesh3d(player_mesh),
         MeshMaterial3d(player_mat),
-        Transform::from_xyz(0.0, 0.9, 0.0),
+        Transform::from_xyz(0.0, player_half_height, 0.0),
         NotShadowCaster,
         PlayerCollider {
-            half_extents: Vec3::new(0.35, 0.9, 0.35),
+            radius: player_radius,
+            half_height: player_half_height,
         },
         PlayerKinematics {
             vertical_velocity: 0.0,
