@@ -896,6 +896,10 @@ pub(super) fn handle_menu_buttons(
                         debug.show_collision_shapes = !debug.show_collision_shapes;
                         should_save = true;
                     }
+                    MenuButtonAction::ToggleAnimationDebug => {
+                        debug.show_animation_debug = !debug.show_animation_debug;
+                        should_save = true;
+                    }
                     MenuButtonAction::ToggleWireframe => {
                         debug.show_wireframe = !debug.show_wireframe;
                         should_save = true;
@@ -1222,6 +1226,22 @@ pub(super) fn rebuild_menu_ui(
                             .with_child(Text::new(format!(
                                 "Collision Shapes: {}",
                                 if debug.show_collision_shapes {
+                                    "On"
+                                } else {
+                                    "Off"
+                                }
+                            )));
+
+                        panel
+                            .spawn((
+                                Button,
+                                MenuButton(MenuButtonAction::ToggleAnimationDebug),
+                                menu_button_node(),
+                                menu_button_normal_color(),
+                            ))
+                            .with_child(Text::new(format!(
+                                "Animation Rig: {}",
+                                if debug.show_animation_debug {
                                     "On"
                                 } else {
                                     "Off"

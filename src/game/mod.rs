@@ -120,6 +120,9 @@ pub fn run() {
         )
         .add_systems(Update, billboard_stair_labels.after(third_person_camera))
         .add_systems(Update, update_performance_overlay)
-        .add_systems(Update, draw_debug_geometry)
+        .add_systems(
+            Update,
+            (configure_debug_gizmo_depth, draw_debug_geometry).chain(),
+        )
         .run();
 }

@@ -166,6 +166,7 @@ pub(super) enum MenuButtonAction {
     ToggleBakedShadows,
     ToggleFog,
     ToggleCollisionShapes,
+    ToggleAnimationDebug,
     ToggleWireframe,
     ToggleWorldAxes,
     StartRebind(GameAction),

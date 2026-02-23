@@ -1,4 +1,5 @@
 use super::*;
+use bevy::gizmos::config::{DefaultGizmoConfigGroup, GizmoConfigStore};
 
 const CONTROLLER_MAX_SLIDES: usize = 4;
 const CONTROLLER_SKIN: f32 = 0.02;
@@ -8,6 +9,19 @@ const HORIZONTAL_GROUND_ACCEL: f32 = 26.0;
 const HORIZONTAL_AIR_ACCEL: f32 = 4.8;
 const HORIZONTAL_GROUND_FRICTION: f32 = 14.0;
 const HORIZONTAL_AIR_DRAG: f32 = 0.9;
+
+pub(super) fn configure_debug_gizmo_depth(
+    debug: Res<DebugSettings>,
+    mut gizmo_config_store: ResMut<GizmoConfigStore>,
+) {
+    let (config, _) = gizmo_config_store.config_mut::<DefaultGizmoConfigGroup>();
+    if debug.show_animation_debug {
+        // Keep lines visually on top of surfaces without forcing full x-ray.
+        config.depth_bias = -0.02;
+    } else {
+        config.depth_bias = 0.0;
+    }
+}
 
 pub(super) fn player_move(
     keys: Res<ButtonInput<KeyCode>>,
@@ -1070,9 +1084,14 @@ pub(super) fn draw_debug_geometry(
     debug: Res<DebugSettings>,
     player_query: Query<(&Transform, &PlayerCollider), With<Player>>,
     world_query: Query<(&Transform, &WorldCollider), Without<Player>>,
+    leg_hips: Query<(&HumanLegHip, &GlobalTransform, &Children)>,
+    leg_knees: Query<&GlobalTransform, With<HumanLegKnee>>,
+    arm_pivots: Query<(&HumanArmPivot, &GlobalTransform, &Children)>,
+    arm_elbows: Query<&GlobalTransform, With<HumanArmElbow>>,
+    heads: Query<&GlobalTransform, With<HumanHead>>,
     mut gizmos: Gizmos,
 ) {
-    if !debug.show_collision_shapes && !debug.show_world_axes {
+    if !debug.show_collision_shapes && !debug.show_world_axes && !debug.show_animation_debug {
         return;
     }
 
@@ -1095,28 +1114,122 @@ pub(super) fn draw_debug_geometry(
         );
     }
 
-    if !debug.show_collision_shapes {
-        return;
+    if debug.show_collision_shapes {
+        for (transform, collider) in &world_query {
+            draw_aabb_lines(
+                &mut gizmos,
+                transform.translation,
+                collider.half_extents,
+                Color::srgba(1.0, 0.9, 0.35, 0.95),
+            );
+        }
+
+        if let Ok((transform, collider)) = player_query.single() {
+            draw_capsule_lines(
+                &mut gizmos,
+                transform.translation,
+                collider.radius,
+                collider.half_height,
+                Color::srgba(0.25, 1.0, 1.0, 0.95),
+            );
+        }
     }
 
-    for (transform, collider) in &world_query {
-        draw_aabb_lines(
-            &mut gizmos,
-            transform.translation,
-            collider.half_extents,
-            Color::srgba(1.0, 0.9, 0.35, 0.95),
-        );
-    }
+    if debug.show_animation_debug {
+        for (hip, hip_global, children) in &leg_hips {
+            let hip_pos = hip_global.translation();
+            let color = if hip.side == LimbSide::Left {
+                Color::srgba(0.20, 0.90, 1.0, 0.95)
+            } else {
+                Color::srgba(1.0, 0.45, 0.85, 0.95)
+            };
+            draw_marker_cross(&mut gizmos, hip_pos, 0.06, color);
 
-    if let Ok((transform, collider)) = player_query.single() {
-        draw_capsule_lines(
-            &mut gizmos,
-            transform.translation,
-            collider.radius,
-            collider.half_height,
-            Color::srgba(0.25, 1.0, 1.0, 0.95),
-        );
+            for child in children {
+                if let Ok(knee_global) = leg_knees.get(*child) {
+                    let knee_pos = knee_global.translation();
+                    gizmos.line(hip_pos, knee_pos, color);
+                    draw_marker_cross(&mut gizmos, knee_pos, 0.05, color);
+
+                    let (_, knee_rot, _) = knee_global.to_scale_rotation_translation();
+                    let ankle_pos = knee_pos + knee_rot * Vec3::new(0.0, -hip.lower_len, 0.0);
+                    gizmos.line(knee_pos, ankle_pos, color);
+                    draw_marker_cross(
+                        &mut gizmos,
+                        ankle_pos,
+                        0.04,
+                        Color::srgba(0.95, 0.95, 0.25, 0.9),
+                    );
+                }
+            }
+        }
+
+        for (pivot, pivot_global, children) in &arm_pivots {
+            let pivot_pos = pivot_global.translation();
+            let color = if pivot.side == LimbSide::Left {
+                Color::srgba(0.30, 1.0, 0.55, 0.95)
+            } else {
+                Color::srgba(1.0, 0.72, 0.25, 0.95)
+            };
+            draw_marker_cross(&mut gizmos, pivot_pos, 0.05, color);
+
+            for child in children {
+                if let Ok(elbow_global) = arm_elbows.get(*child) {
+                    let elbow_pos = elbow_global.translation();
+                    gizmos.line(pivot_pos, elbow_pos, color);
+                    draw_marker_cross(&mut gizmos, elbow_pos, 0.045, color);
+
+                    let (_, elbow_rot, _) = elbow_global.to_scale_rotation_translation();
+                    let wrist_pos = elbow_pos + elbow_rot * Vec3::new(0.0, -pivot.lower_len, 0.0);
+                    gizmos.line(elbow_pos, wrist_pos, color);
+                    draw_marker_cross(
+                        &mut gizmos,
+                        wrist_pos,
+                        0.04,
+                        Color::srgba(0.95, 0.95, 0.25, 0.9),
+                    );
+                }
+            }
+        }
+
+        for head_global in &heads {
+            let (_, rot, pos) = head_global.to_scale_rotation_translation();
+            draw_marker_cross(&mut gizmos, pos, 0.05, Color::srgba(0.85, 0.95, 1.0, 0.95));
+            gizmos.line(
+                pos,
+                pos + rot * Vec3::X * 0.14,
+                Color::srgb(0.95, 0.25, 0.25),
+            );
+            gizmos.line(
+                pos,
+                pos + rot * Vec3::Y * 0.14,
+                Color::srgb(0.25, 0.95, 0.25),
+            );
+            gizmos.line(
+                pos,
+                pos + rot * Vec3::Z * 0.14,
+                Color::srgb(0.25, 0.55, 0.95),
+            );
+        }
     }
+}
+
+fn draw_marker_cross(gizmos: &mut Gizmos, center: Vec3, half: f32, color: Color) {
+    gizmos.line(
+        center + Vec3::new(-half, 0.0, 0.0),
+        center + Vec3::new(half, 0.0, 0.0),
+        color,
+    );
+    gizmos.line(
+        center + Vec3::new(0.0, -half, 0.0),
+        center + Vec3::new(0.0, half, 0.0),
+        color,
+    );
+    gizmos.line(
+        center + Vec3::new(0.0, 0.0, -half),
+        center + Vec3::new(0.0, 0.0, half),
+        color,
+    );
 }
 
 fn draw_aabb_lines(gizmos: &mut Gizmos, center: Vec3, half: Vec3, color: Color) {

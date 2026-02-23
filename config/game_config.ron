@@ -23,7 +23,8 @@
         show_baked_shadows: true,
         show_fog: true,
         show_collision_shapes: true,
-        show_wireframe: true,
+        show_animation_debug: true,
+        show_wireframe: false,
         show_world_axes: true,
     ),
 )
