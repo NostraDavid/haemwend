@@ -1,0 +1,19 @@
+(
+    models: {
+        "table": (
+            values: {
+                "top-thickness": "0.160000",
+                "top-warp": "0.021000",
+                "table-height": "0.400000",
+                "leg-thickness": "0.210000",
+                "inset": "0.115000",
+                "top-width": "2.000000",
+                "top-taper": "0.960000",
+                "leg-taper": "0.940000",
+                "leg-splay-deg": "5.500000",
+                "top-depth": "1.2",
+            },
+            export_path: Some("assets/models/table.glb"),
+        ),
+    },
+)

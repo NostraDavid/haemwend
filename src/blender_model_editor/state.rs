@@ -1,11 +1,14 @@
 use crate::blender_model_editor::model::{ModelsConfig, default_models_config, load_models_config};
-use crate::blender_model_editor::{LIVE_REPORT_PATH, PRESETS_PATH};
+use crate::blender_model_editor::{
+    LEGACY_PRESETS_PATH, LEGACY_PRESETS_PATH_OLD, LIVE_REPORT_PATH, PRESETS_PATH,
+};
 use bevy::prelude::Resource;
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SavedEditorState {
@@ -90,8 +93,9 @@ impl EditorState {
             values: self.values.clone(),
             export_path: Some(self.export_path.clone()),
         };
-        self.presets.models.insert(model_id, preset);
-        self.save_presets_to_disk()
+        self.presets.models.insert(model_id.clone(), preset.clone());
+        self.save_presets_to_disk()?;
+        self.save_snapshot_to_history(&model_id, &preset)
     }
 
     pub fn reload_presets_from_disk(&mut self) -> Result<(), String> {
@@ -109,6 +113,33 @@ impl EditorState {
             .map_err(|err| format!("failed to serialize presets: {err}"))?;
         fs::write(&self.presets_path, content)
             .map_err(|err| format!("failed to write {}: {err}", self.presets_path.display()))
+    }
+
+    fn save_snapshot_to_history(
+        &self,
+        model_id: &str,
+        preset: &SavedModelParams,
+    ) -> Result<(), String> {
+        let Some(presets_root) = self.presets_path.parent() else {
+            return Err("presets path has no parent directory".to_string());
+        };
+        let history_dir = presets_root.join("history").join(model_id);
+        fs::create_dir_all(&history_dir).map_err(|err| {
+            format!(
+                "failed to create history dir {}: {err}",
+                history_dir.display()
+            )
+        })?;
+
+        let timestamp_ms = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|err| format!("clock error while creating snapshot timestamp: {err}"))?
+            .as_millis();
+        let snapshot_path = history_dir.join(format!("{timestamp_ms}.ron"));
+        let content = ron::ser::to_string_pretty(preset, PrettyConfig::new())
+            .map_err(|err| format!("failed to serialize snapshot: {err}"))?;
+        fs::write(&snapshot_path, content)
+            .map_err(|err| format!("failed to write {}: {err}", snapshot_path.display()))
     }
 
     pub fn model_default(&self, key: &str) -> Option<&str> {
@@ -153,10 +184,35 @@ pub fn load_initial_state() -> EditorState {
     }
 
     let presets_path = PathBuf::from(PRESETS_PATH);
-    let presets = load_saved_presets(&presets_path).unwrap_or_else(|err| {
-        eprintln!("Ignoring saved presets due to parse/read error: {err}");
-        SavedEditorState::default()
-    });
+    let legacy_presets_path = PathBuf::from(LEGACY_PRESETS_PATH);
+    let legacy_presets_path_old = PathBuf::from(LEGACY_PRESETS_PATH_OLD);
+    let (presets, loaded_from_legacy) = if presets_path.exists() {
+        (
+            load_saved_presets(&presets_path).unwrap_or_else(|err| {
+                eprintln!("Ignoring saved presets due to parse/read error: {err}");
+                SavedEditorState::default()
+            }),
+            false,
+        )
+    } else if legacy_presets_path.exists() {
+        (
+            load_saved_presets(&legacy_presets_path).unwrap_or_else(|err| {
+                eprintln!("Ignoring legacy saved presets due to parse/read error: {err}");
+                SavedEditorState::default()
+            }),
+            true,
+        )
+    } else if legacy_presets_path_old.exists() {
+        (
+            load_saved_presets(&legacy_presets_path_old).unwrap_or_else(|err| {
+                eprintln!("Ignoring legacy saved presets due to parse/read error: {err}");
+                SavedEditorState::default()
+            }),
+            true,
+        )
+    } else {
+        (SavedEditorState::default(), false)
+    };
 
     let mut state = EditorState {
         export_path: String::new(),
@@ -178,7 +234,20 @@ pub fn load_initial_state() -> EditorState {
 
     let loaded = state.reset_values_from_defaults();
     if loaded {
-        state.status = "Loaded saved parameters".to_string();
+        state.status = if loaded_from_legacy {
+            "Loaded saved parameters (migrated from _artifacts)".to_string()
+        } else {
+            "Loaded saved parameters".to_string()
+        };
+    }
+
+    if loaded_from_legacy {
+        if let Err(err) = state.save_presets_to_disk() {
+            eprintln!(
+                "Failed to migrate presets to {}: {err}",
+                state.presets_path.display()
+            );
+        }
     }
 
     state

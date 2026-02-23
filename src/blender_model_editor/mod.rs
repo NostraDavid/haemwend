@@ -8,7 +8,9 @@ pub mod ui;
 
 pub const MODELS_CONFIG_PATH: &str = "config/blender_ai_models.ron";
 pub const LIVE_REPORT_PATH: &str = "assets/blender_ai/_artifacts/live_report.json";
-pub const PRESETS_PATH: &str = "assets/blender_ai/_artifacts/editor_presets.ron";
+pub const PRESETS_PATH: &str = "assets/blender_ai/presets/table/table_preset.ron";
+pub const LEGACY_PRESETS_PATH: &str = "assets/blender_ai/presets/editor_presets.ron";
+pub const LEGACY_PRESETS_PATH_OLD: &str = "assets/blender_ai/_artifacts/editor_presets.ron";
 pub const GRID_EXTENT_METERS: i32 = 20;
 pub const GRID_MAJOR_STEP_METERS: i32 = 5;
 pub const DEFAULT_CAMERA_YAW_DEG: f32 = 45.0;
