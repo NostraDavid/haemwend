@@ -123,6 +123,7 @@ pub(super) fn load_pending_scenario(
     start_menu_cameras: Query<Entity, With<StartMenuCamera>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut images: ResMut<Assets<Image>>,
 ) {
     let Some(scenario_index) = flow.pending_scenario.take() else {
         return;
@@ -149,6 +150,7 @@ pub(super) fn load_pending_scenario(
         &asset_server,
         &mut meshes,
         &mut materials,
+        &mut images,
         &scenario,
     );
     settings.set_changed();
@@ -501,11 +503,86 @@ pub(super) fn fog_debug_sliders_ui(
     }
 }
 
+fn create_debug_skybox_texture(images: &mut Assets<Image>) -> Handle<Image> {
+    let width = 1024usize;
+    let height = 512usize;
+    let mut data = vec![0_u8; width * height * 4];
+
+    for y in 0..height {
+        let v = y as f32 / (height - 1) as f32;
+        for x in 0..width {
+            let u = x as f32 / (width - 1) as f32;
+            let idx = (y * width + x) * 4;
+
+            let horizon = (v - 0.5).abs();
+            let horizon_weight = (1.0 - (horizon * 4.0)).clamp(0.0, 1.0);
+
+            let top = [0.18_f32, 0.30_f32, 0.52_f32];
+            let bottom = [0.58_f32, 0.71_f32, 0.90_f32];
+            let mut r = top[0] * v + bottom[0] * (1.0 - v);
+            let mut g = top[1] * v + bottom[1] * (1.0 - v);
+            let mut b = top[2] * v + bottom[2] * (1.0 - v);
+
+            let checker = ((x / 48) + (y / 48)) % 2;
+            let checker_boost = if checker == 0 { 0.06 } else { -0.03 };
+            r = (r + checker_boost).clamp(0.0, 1.0);
+            g = (g + checker_boost).clamp(0.0, 1.0);
+            b = (b + checker_boost).clamp(0.0, 1.0);
+
+            if x % 128 == 0 || y % 128 == 0 {
+                r = 0.95;
+                g = 0.25;
+                b = 0.18;
+            } else if x % 64 == 0 || y % 64 == 0 {
+                r = (r + 0.25).clamp(0.0, 1.0);
+                g = (g + 0.22).clamp(0.0, 1.0);
+                b = (b + 0.18).clamp(0.0, 1.0);
+            }
+
+            if horizon < 0.01 {
+                r = 1.0;
+                g = 0.92;
+                b = 0.35;
+            } else if horizon_weight > 0.0 {
+                r = (r + 0.12 * horizon_weight).clamp(0.0, 1.0);
+                g = (g + 0.10 * horizon_weight).clamp(0.0, 1.0);
+                b = (b + 0.06 * horizon_weight).clamp(0.0, 1.0);
+            }
+
+            if (u - 0.5).abs() < 0.0015 {
+                r = 0.12;
+                g = 0.98;
+                b = 0.74;
+            }
+
+            data[idx] = (r * 255.0) as u8;
+            data[idx + 1] = (g * 255.0) as u8;
+            data[idx + 2] = (b * 255.0) as u8;
+            data[idx + 3] = 255;
+        }
+    }
+
+    let image = Image::new(
+        bevy::render::render_resource::Extent3d {
+            width: width as u32,
+            height: height as u32,
+            depth_or_array_layers: 1,
+        },
+        bevy::render::render_resource::TextureDimension::D2,
+        data,
+        bevy::render::render_resource::TextureFormat::Rgba8UnormSrgb,
+        bevy::asset::RenderAssetUsages::default(),
+    );
+
+    images.add(image)
+}
+
 pub(super) fn spawn_scenario_world(
     commands: &mut Commands,
     asset_server: &AssetServer,
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,
+    images: &mut Assets<Image>,
     scenario: &ScenarioDefinition,
 ) {
     let ground_extent = scenario.ground_extent;
@@ -576,6 +653,16 @@ pub(super) fn spawn_scenario_world(
         alpha_mode: AlphaMode::Blend,
         unlit: true,
         cull_mode: None,
+        ..default()
+    });
+    let skybox_texture = create_debug_skybox_texture(images);
+    let skybox_mesh = meshes.add(Cuboid::new(1.0, 1.0, 1.0));
+    let skybox_mat = materials.add(StandardMaterial {
+        base_color: Color::WHITE,
+        base_color_texture: Some(skybox_texture),
+        unlit: true,
+        cull_mode: Some(bevy::render::render_resource::Face::Front),
+        fog_enabled: false,
         ..default()
     });
 
@@ -818,6 +905,16 @@ pub(super) fn spawn_scenario_world(
         ThirdPersonCameraRig::default(),
         Msaa::Sample4,
         default_distance_fog(),
+        InGameEntity,
+    ));
+
+    commands.spawn((
+        SkyboxCube,
+        Mesh3d(skybox_mesh),
+        MeshMaterial3d(skybox_mat),
+        Transform::from_scale(Vec3::splat((ground_extent * 18.0).max(2000.0))),
+        NotShadowCaster,
+        NotShadowReceiver,
         InGameEntity,
     ));
 
@@ -1742,6 +1839,7 @@ pub(super) fn apply_runtime_settings(
                 Without<Wireframe>,
                 Without<PlayerBlobShadow>,
                 Without<BakedShadow>,
+                Without<SkyboxCube>,
             ),
         >,
         Query<
@@ -1751,6 +1849,7 @@ pub(super) fn apply_runtime_settings(
                 With<Wireframe>,
                 Without<PlayerBlobShadow>,
                 Without<BakedShadow>,
+                Without<SkyboxCube>,
             ),
         >,
     )>,

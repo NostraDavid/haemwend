@@ -70,6 +70,9 @@ pub(super) struct PlayerBlobShadow;
 pub(super) struct BakedShadow;
 
 #[derive(Component)]
+pub(super) struct SkyboxCube;
+
+#[derive(Component)]
 pub(super) struct MenuRoot;
 
 #[derive(Component)]
