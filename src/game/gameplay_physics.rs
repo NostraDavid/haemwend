@@ -161,6 +161,7 @@ pub(super) fn animate_procedural_human(
             Without<HumanLegHip>,
             Without<HumanLegKnee>,
             Without<HumanArmPivot>,
+            Without<HumanArmElbow>,
             Without<HumanHead>,
         ),
     >,
@@ -172,6 +173,7 @@ pub(super) fn animate_procedural_human(
             Without<HumanLegHip>,
             Without<HumanLegKnee>,
             Without<HumanArmPivot>,
+            Without<HumanArmElbow>,
             Without<HumanHead>,
         ),
     >,
@@ -182,6 +184,7 @@ pub(super) fn animate_procedural_human(
             Without<ProceduralHumanVisualRoot>,
             Without<HumanLegKnee>,
             Without<HumanArmPivot>,
+            Without<HumanArmElbow>,
             Without<HumanHead>,
         ),
     >,
@@ -193,16 +196,30 @@ pub(super) fn animate_procedural_human(
             Without<ProceduralHumanVisualRoot>,
             Without<HumanLegHip>,
             Without<HumanArmPivot>,
+            Without<HumanArmElbow>,
             Without<HumanHead>,
         ),
     >,
     mut arm_pivots: Query<
-        (&HumanArmPivot, &mut Transform),
+        (&HumanArmPivot, &mut Transform, &Children),
         (
             Without<Player>,
             Without<ProceduralHumanVisualRoot>,
             Without<HumanLegHip>,
             Without<HumanLegKnee>,
+            Without<HumanArmElbow>,
+            Without<HumanHead>,
+        ),
+    >,
+    mut arm_elbows: Query<
+        &mut Transform,
+        (
+            With<HumanArmElbow>,
+            Without<Player>,
+            Without<ProceduralHumanVisualRoot>,
+            Without<HumanLegHip>,
+            Without<HumanLegKnee>,
+            Without<HumanArmPivot>,
             Without<HumanHead>,
         ),
     >,
@@ -215,6 +232,7 @@ pub(super) fn animate_procedural_human(
             Without<HumanLegHip>,
             Without<HumanLegKnee>,
             Without<HumanArmPivot>,
+            Without<HumanArmElbow>,
         ),
     >,
 ) {
@@ -427,17 +445,36 @@ pub(super) fn animate_procedural_human(
         }
     }
 
-    for (pivot, mut transform) in &mut arm_pivots {
+    for (pivot, mut transform, children) in &mut arm_pivots {
         let side_phase = if pivot.side == LimbSide::Left {
             std::f32::consts::PI
         } else {
             0.0
         };
+        let side_sign = if pivot.side == LimbSide::Left {
+            1.0
+        } else {
+            -1.0
+        };
         let swing = (anim_state.phase + side_phase).sin();
         let idle = (time.elapsed_secs() * 1.8 + side_phase).sin() * 0.07 * (1.0 - speed_factor);
         let pitch = swing * (0.15 + 0.72 * speed_factor) + idle;
+        let forearm_ratio = (pivot.lower_len / pivot.upper_len.max(0.05)).clamp(0.7, 1.3);
+        let elbow_bend =
+            (0.35 + 0.30 * speed_factor + 0.20 * (1.0 - swing.abs())) * forearm_ratio;
+        let elbow_bend = elbow_bend.clamp(0.2, 1.1);
+        let shoulder_yaw = side_sign * 0.22;
+        let elbow_counter_yaw = -side_sign * 0.10;
         transform.translation = pivot.base_local;
-        transform.rotation = Quat::from_euler(EulerRot::XYZ, pitch, 0.0, 0.0);
+        transform.rotation = Quat::from_euler(EulerRot::XYZ, pitch, shoulder_yaw, 0.0);
+
+        for child in children {
+            if let Ok(mut elbow_transform) = arm_elbows.get_mut(*child) {
+                elbow_transform.translation = Vec3::new(0.0, -pivot.upper_len, 0.0);
+                elbow_transform.rotation =
+                    Quat::from_euler(EulerRot::XYZ, -elbow_bend, elbow_counter_yaw, 0.0);
+            }
+        }
     }
 
     let head_blend = 1.0 - (-dt * 12.0).exp();
@@ -757,6 +794,7 @@ pub(super) fn third_person_camera(
     mouse_scroll: Res<AccumulatedMouseScroll>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     menu: Res<MenuState>,
+    world_collision_grid: Res<WorldCollisionGrid>,
     player_query: Query<&Transform, (With<Player>, Without<Camera3d>)>,
     mut camera_query: Query<(&mut Transform, &mut ThirdPersonCameraRig), With<Camera3d>>,
 ) {
@@ -784,11 +822,91 @@ pub(super) fn third_person_camera(
         .clamp(rig.min_distance, rig.max_distance);
 
     let target = player_transform.translation;
+    let look_target = target + Vec3::Y * rig.focus_height;
     let rotation = Quat::from_euler(EulerRot::YXZ, rig.yaw, rig.pitch, 0.0);
     let orbit_offset = rotation * Vec3::new(0.0, 0.0, rig.distance);
+    let desired_position = target + orbit_offset + Vec3::Y * rig.height;
 
-    camera_transform.translation = target + orbit_offset + Vec3::Y * rig.height;
-    camera_transform.look_at(target + Vec3::Y * rig.focus_height, Vec3::Y);
+    camera_transform.translation =
+        resolve_camera_collision(look_target, desired_position, &world_collision_grid);
+    camera_transform.look_at(look_target, Vec3::Y);
+}
+
+fn resolve_camera_collision(origin: Vec3, desired: Vec3, grid: &WorldCollisionGrid) -> Vec3 {
+    let camera_radius = 0.18_f32;
+    let camera_skin = 0.08_f32;
+    let min_from_origin = 0.35_f32;
+
+    let segment = desired - origin;
+    let distance = segment.length();
+    if distance <= 1e-5 {
+        return desired;
+    }
+
+    let dir = segment / distance;
+    let mut hit_t = 1.0_f32;
+    let query_center = (origin + desired) * 0.5;
+    let query_radius = distance * 0.5 + camera_radius + 0.5;
+
+    grid.query_nearby(query_center, query_radius, |collider| {
+        let expanded_half = collider.half_extents + Vec3::splat(camera_radius);
+        let box_min = collider.center - expanded_half;
+        let box_max = collider.center + expanded_half;
+        if let Some(t) = segment_aabb_toi(origin, desired, box_min, box_max) {
+            if t < hit_t {
+                hit_t = t;
+            }
+        }
+    });
+
+    if hit_t >= 1.0 {
+        return desired;
+    }
+
+    let safe_distance = (distance * hit_t - camera_skin).max(min_from_origin);
+    origin + dir * safe_distance
+}
+
+fn segment_aabb_toi(start: Vec3, end: Vec3, box_min: Vec3, box_max: Vec3) -> Option<f32> {
+    let delta = end - start;
+    let mut t_enter = 0.0_f32;
+    let mut t_exit = 1.0_f32;
+
+    for axis in 0..3 {
+        let (s, d, min_v, max_v) = if axis == 0 {
+            (start.x, delta.x, box_min.x, box_max.x)
+        } else if axis == 1 {
+            (start.y, delta.y, box_min.y, box_max.y)
+        } else {
+            (start.z, delta.z, box_min.z, box_max.z)
+        };
+
+        if d.abs() <= 1e-8 {
+            if s < min_v || s > max_v {
+                return None;
+            }
+            continue;
+        }
+
+        let inv_d = 1.0 / d;
+        let mut t1 = (min_v - s) * inv_d;
+        let mut t2 = (max_v - s) * inv_d;
+        if t1 > t2 {
+            std::mem::swap(&mut t1, &mut t2);
+        }
+
+        t_enter = t_enter.max(t1);
+        t_exit = t_exit.min(t2);
+        if t_enter > t_exit {
+            return None;
+        }
+    }
+
+    if t_exit < 0.0 || t_enter > 1.0 {
+        None
+    } else {
+        Some(t_enter.clamp(0.0, 1.0))
+    }
 }
 
 pub(super) fn billboard_stair_labels(

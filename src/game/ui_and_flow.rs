@@ -190,7 +190,10 @@ pub(super) fn spawn_scenario_world(
     let pelvis_mesh = meshes.add(Cuboid::new(0.42, 0.24, 0.26));
     let head_mesh = meshes.add(Cuboid::new(0.28, 0.30, 0.26));
     let hair_mesh = meshes.add(Cuboid::new(0.30, 0.10, 0.28));
-    let arm_mesh = meshes.add(Capsule3d::new(0.065, 0.38));
+    let upper_arm_len = 0.28_f32;
+    let lower_arm_len = 0.26_f32;
+    let upper_arm_mesh = meshes.add(Cuboid::new(0.12, upper_arm_len, 0.12));
+    let lower_arm_mesh = meshes.add(Cuboid::new(0.11, lower_arm_len, 0.11));
     // Keep leg chain length aligned with hip height so IK can actually reach the floor.
     let upper_leg_len = 0.40_f32;
     let lower_leg_len = 0.40_f32;
@@ -304,22 +307,36 @@ pub(super) fn spawn_scenario_world(
                             HumanArmPivot {
                                 side: LimbSide::Left,
                                 base_local: left_arm_base,
+                                upper_len: upper_arm_len,
+                                lower_len: lower_arm_len,
                             },
                             Transform::from_translation(left_arm_base),
                         ))
                         .with_children(|arm| {
                             arm.spawn((
                                 PlayerVisualPart,
-                                Mesh3d(arm_mesh.clone()),
+                                Mesh3d(upper_arm_mesh.clone()),
                                 MeshMaterial3d(shirt_mat.clone()),
-                                Transform::from_xyz(0.0, -0.26, 0.0),
+                                Transform::from_xyz(0.0, -upper_arm_len * 0.5, 0.0),
                             ));
                             arm.spawn((
-                                PlayerVisualPart,
-                                Mesh3d(hand_mesh.clone()),
-                                MeshMaterial3d(skin_mat.clone()),
-                                Transform::from_xyz(0.0, -0.57, 0.03),
-                            ));
+                                HumanArmElbow,
+                                Transform::from_xyz(0.0, -upper_arm_len, 0.0),
+                            ))
+                            .with_children(|elbow| {
+                                elbow.spawn((
+                                    PlayerVisualPart,
+                                    Mesh3d(lower_arm_mesh.clone()),
+                                    MeshMaterial3d(shirt_mat.clone()),
+                                    Transform::from_xyz(0.0, -lower_arm_len * 0.5, 0.0),
+                                ));
+                                elbow.spawn((
+                                    PlayerVisualPart,
+                                    Mesh3d(hand_mesh.clone()),
+                                    MeshMaterial3d(skin_mat.clone()),
+                                    Transform::from_xyz(0.0, -(lower_arm_len + 0.07), 0.03),
+                                ));
+                            });
                         });
 
                     let right_arm_base = Vec3::new(0.34, 1.40, 0.0);
@@ -328,22 +345,36 @@ pub(super) fn spawn_scenario_world(
                             HumanArmPivot {
                                 side: LimbSide::Right,
                                 base_local: right_arm_base,
+                                upper_len: upper_arm_len,
+                                lower_len: lower_arm_len,
                             },
                             Transform::from_translation(right_arm_base),
                         ))
                         .with_children(|arm| {
                             arm.spawn((
                                 PlayerVisualPart,
-                                Mesh3d(arm_mesh.clone()),
+                                Mesh3d(upper_arm_mesh.clone()),
                                 MeshMaterial3d(shirt_mat.clone()),
-                                Transform::from_xyz(0.0, -0.26, 0.0),
+                                Transform::from_xyz(0.0, -upper_arm_len * 0.5, 0.0),
                             ));
                             arm.spawn((
-                                PlayerVisualPart,
-                                Mesh3d(hand_mesh.clone()),
-                                MeshMaterial3d(skin_mat.clone()),
-                                Transform::from_xyz(0.0, -0.57, 0.03),
-                            ));
+                                HumanArmElbow,
+                                Transform::from_xyz(0.0, -upper_arm_len, 0.0),
+                            ))
+                            .with_children(|elbow| {
+                                elbow.spawn((
+                                    PlayerVisualPart,
+                                    Mesh3d(lower_arm_mesh.clone()),
+                                    MeshMaterial3d(shirt_mat.clone()),
+                                    Transform::from_xyz(0.0, -lower_arm_len * 0.5, 0.0),
+                                ));
+                                elbow.spawn((
+                                    PlayerVisualPart,
+                                    Mesh3d(hand_mesh.clone()),
+                                    MeshMaterial3d(skin_mat.clone()),
+                                    Transform::from_xyz(0.0, -(lower_arm_len + 0.07), 0.03),
+                                ));
+                            });
                         });
 
                     let left_leg_base = Vec3::new(-0.16, 0.88, 0.0);

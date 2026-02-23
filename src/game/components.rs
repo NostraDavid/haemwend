@@ -119,6 +119,8 @@ pub(super) struct HumanLegHip {
 pub(super) struct HumanArmPivot {
     pub(super) side: LimbSide,
     pub(super) base_local: Vec3,
+    pub(super) upper_len: f32,
+    pub(super) lower_len: f32,
 }
 
 #[derive(Component)]
@@ -131,6 +133,9 @@ pub(super) struct HumanHead {
 
 #[derive(Component)]
 pub(super) struct HumanLegKnee;
+
+#[derive(Component)]
+pub(super) struct HumanArmElbow;
 
 #[derive(Component, Clone, Copy)]
 pub(super) struct MenuButton(pub(super) MenuButtonAction);
