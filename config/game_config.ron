@@ -4,7 +4,7 @@
         resolution_width: 1920,
         resolution_height: 1080,
         msaa_enabled: true,
-        shadow_mode: Blob,
+        shadow_mode: Stencil,
     ),
     keybinds: (
         move_forward: "KeyW",

@@ -786,7 +786,7 @@ pub(super) fn rebuild_menu_ui(
                                 menu_button_normal_color(),
                             ))
                             .with_child(Text::new(format!(
-                                "Shadows: {}",
+                                "Player Shadow: {}",
                                 settings.shadow_mode.label()
                             )));
 
@@ -824,7 +824,7 @@ pub(super) fn rebuild_menu_ui(
                                 menu_button_normal_color(),
                             ))
                             .with_child(Text::new(format!(
-                                "Baked Shadows: {}",
+                                "World Baked Shadows: {}",
                                 if debug.show_baked_shadows {
                                     "On"
                                 } else {
@@ -1032,7 +1032,7 @@ pub(super) fn apply_runtime_settings(
     }
 
     for mut visibility in &mut visibility_queries.p1() {
-        *visibility = if stencil_mode || !debug.show_baked_shadows {
+        *visibility = if !debug.show_baked_shadows {
             Visibility::Hidden
         } else {
             Visibility::Visible
