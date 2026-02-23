@@ -115,6 +115,7 @@ pub(super) fn load_pending_scenario(
     mut commands: Commands,
     mut flow: ResMut<GameFlowState>,
     scenarios: Res<ScenarioCatalog>,
+    asset_server: Res<AssetServer>,
     mut settings: ResMut<GameSettings>,
     mut menu: ResMut<MenuState>,
     start_menu_roots: Query<Entity, With<StartMenuRoot>>,
@@ -142,13 +143,20 @@ pub(super) fn load_pending_scenario(
     menu.awaiting_rebind = None;
     menu.dirty = false;
 
-    spawn_scenario_world(&mut commands, &mut meshes, &mut materials, &scenario);
+    spawn_scenario_world(
+        &mut commands,
+        &asset_server,
+        &mut meshes,
+        &mut materials,
+        &scenario,
+    );
     settings.set_changed();
     flow.in_game = true;
 }
 
 pub(super) fn spawn_scenario_world(
     commands: &mut Commands,
+    asset_server: &AssetServer,
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,
     scenario: &ScenarioDefinition,
@@ -339,6 +347,18 @@ pub(super) fn spawn_scenario_world(
         Vec3::new(0.0, 0.011, tower_z),
         Vec2::new(5.0, 5.0),
     );
+
+    if scenario.id == "greenwood" {
+        // Place the generated table model as a scene in Greenwood Valley.
+        commands.spawn((
+            SceneRoot(asset_server.load("models/table.glb#Scene0")),
+            Transform::from_xyz(7.0, 0.0, -5.0),
+            WorldCollider {
+                half_extents: Vec3::new(0.7, 0.4, 0.7),
+            },
+            InGameEntity,
+        ));
+    }
 
     commands
         .spawn((
