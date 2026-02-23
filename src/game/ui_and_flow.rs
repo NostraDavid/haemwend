@@ -255,6 +255,7 @@ pub(super) fn spawn_scenario_world(
             },
             ProceduralHumanAnimState::from_position(Vec3::new(0.0, player_half_height, 0.0)),
             PlayerKinematics {
+                horizontal_velocity: Vec2::ZERO,
                 vertical_velocity: 0.0,
                 grounded: true,
             },

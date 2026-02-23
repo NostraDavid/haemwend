@@ -263,6 +263,7 @@ impl WorldCollisionGrid {
 
 #[derive(Component, Default)]
 pub(super) struct PlayerKinematics {
+    pub(super) horizontal_velocity: Vec2,
     pub(super) vertical_velocity: f32,
     pub(super) grounded: bool,
 }

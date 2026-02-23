@@ -4,6 +4,10 @@ const CONTROLLER_MAX_SLIDES: usize = 4;
 const CONTROLLER_SKIN: f32 = 0.02;
 const CONTROLLER_STEP_HEIGHT: f32 = 0.38;
 const CONTROLLER_STEP_DROP: f32 = 0.25;
+const HORIZONTAL_GROUND_ACCEL: f32 = 26.0;
+const HORIZONTAL_AIR_ACCEL: f32 = 4.8;
+const HORIZONTAL_GROUND_FRICTION: f32 = 14.0;
+const HORIZONTAL_AIR_DRAG: f32 = 0.9;
 
 pub(super) fn player_move(
     keys: Res<ButtonInput<KeyCode>>,
@@ -67,6 +71,7 @@ pub(super) fn player_move(
     };
 
     let movement = (forward * forward_axis + right * strafe_axis).normalize_or_zero();
+    let has_input = movement.length_squared() > 1e-6;
 
     let speed = if keybinds.action_pressed(&keys, GameAction::Sprint) {
         player.sprint_speed
@@ -74,8 +79,33 @@ pub(super) fn player_move(
         player.walk_speed
     };
 
-    let desired_delta = movement * speed * dt;
+    let desired_horizontal_velocity = Vec2::new(movement.x, movement.z) * speed;
+    let accel = if kinematics.grounded {
+        HORIZONTAL_GROUND_ACCEL
+    } else {
+        HORIZONTAL_AIR_ACCEL
+    };
+    let accel_blend = 1.0 - (-dt * accel).exp();
+    let horizontal_velocity = kinematics.horizontal_velocity;
+    kinematics.horizontal_velocity +=
+        (desired_horizontal_velocity - horizontal_velocity) * accel_blend;
 
+    if !has_input {
+        let damping = if kinematics.grounded {
+            (-dt * HORIZONTAL_GROUND_FRICTION).exp()
+        } else {
+            (-dt * HORIZONTAL_AIR_DRAG).exp()
+        };
+        kinematics.horizontal_velocity *= damping;
+    }
+
+    let desired_delta = Vec3::new(
+        kinematics.horizontal_velocity.x * dt,
+        0.0,
+        kinematics.horizontal_velocity.y * dt,
+    );
+
+    let horizontal_start = transform.translation;
     let mut next_position = transform.translation;
     let (slid_position, blocked) = move_with_slide(
         next_position,
@@ -101,6 +131,12 @@ pub(super) fn player_move(
             next_position = step_position;
         }
     }
+
+    let actual_horizontal_delta = Vec2::new(
+        next_position.x - horizontal_start.x,
+        next_position.z - horizontal_start.z,
+    );
+    kinematics.horizontal_velocity = actual_horizontal_delta / dt.max(1e-5);
 
     if keybinds.action_just_pressed(&keys, GameAction::Jump) && kinematics.grounded {
         kinematics.vertical_velocity = player.jump_speed;
@@ -258,6 +294,15 @@ pub(super) fn animate_procedural_human(
     let smooth = 1.0 - (-dt * 10.0).exp();
     anim_state.smoothed_speed += (target_speed - anim_state.smoothed_speed) * smooth;
     let speed_factor = (anim_state.smoothed_speed / 8.0).clamp(0.0, 1.0);
+    let airborne = if player_kinematics.grounded { 0.0 } else { 1.0 };
+    let jump_up = (player_kinematics.vertical_velocity / 6.0).clamp(0.0, 1.0) * airborne;
+    let jump_down = (-player_kinematics.vertical_velocity / 9.0).clamp(0.0, 1.0) * airborne;
+    let horizontal_velocity = Vec2::new(delta.x, delta.z) / dt;
+    let facing_forward = player_transform.rotation * -Vec3::Z;
+    let facing_forward_xz = Vec2::new(facing_forward.x, facing_forward.z).normalize_or_zero();
+    let forward_speed = horizontal_velocity.dot(facing_forward_xz);
+    let forward_air = (forward_speed / 6.5).clamp(0.0, 1.0) * airborne;
+    let landing_ready = forward_air * smoothstep01(jump_down);
 
     anim_state.phase += dt * (2.0 + anim_state.smoothed_speed * 2.0);
     if anim_state.phase > std::f32::consts::TAU {
@@ -267,9 +312,13 @@ pub(super) fn animate_procedural_human(
     let stride_bob = (anim_state.phase * 2.0).sin() * (0.01 + 0.045 * speed_factor);
     let idle_bob = (time.elapsed_secs() * 1.5).sin() * (0.006 * (1.0 - speed_factor));
     let lean_roll = (anim_state.phase).sin() * 0.06 * speed_factor;
-    let mut root_local_translation = Vec3::new(0.0, -0.9 + stride_bob + idle_bob, 0.0);
-    let root_local_rotation =
-        Quat::from_rotation_y(std::f32::consts::PI) * Quat::from_rotation_z(lean_roll);
+    let jump_body_pitch = -0.10 * jump_up + 0.14 * jump_down + 0.12 * landing_ready;
+    let jump_body_offset = 0.05 * jump_up - 0.02 * jump_down - 0.02 * landing_ready;
+    let mut root_local_translation =
+        Vec3::new(0.0, -0.9 + stride_bob + idle_bob + jump_body_offset, 0.0);
+    let root_local_rotation = Quat::from_rotation_y(std::f32::consts::PI)
+        * Quat::from_rotation_z(lean_roll)
+        * Quat::from_rotation_x(jump_body_pitch);
     let root_world_rotation = player_transform.rotation * root_local_rotation;
     let visual_player_translation = Vec3::new(
         player_transform.translation.x,
@@ -306,6 +355,13 @@ pub(super) fn animate_procedural_human(
         anim_state.ground_ik_weight = anim_state.ground_ik_weight.min(0.35);
     }
     let ground_ik_weight = anim_state.ground_ik_weight.clamp(0.0, 1.0);
+    let jump_pose = (1.0 - ground_ik_weight).max(airborne * 0.6);
+    let jump_leg_tuck = (0.30 * jump_up + 0.18 * jump_down + 0.08 * jump_pose
+        - 0.10 * landing_ready)
+        .clamp(-0.08, 0.45);
+    let jump_leg_forward = 0.08 * jump_up - 0.04 * jump_down + 0.06 * landing_ready;
+    let leg_stride_scale = (1.0 - 0.70 * jump_pose - 0.12 * landing_ready).clamp(0.15, 1.0);
+    let jump_arm_pitch = -0.45 * jump_up + 0.25 * jump_down + 0.08 * landing_ready;
 
     // If one foot is supported lower (edge of stairs), lower pelvis so stance feet can reach.
     let mut pelvis_drop = 0.0_f32;
@@ -318,8 +374,8 @@ pub(super) fn animate_procedural_human(
             let nominal_local = hip.base_local
                 + Vec3::new(
                     0.0,
-                    -(hip.upper_len + hip.lower_len) + lift * (0.10 + 0.08 * gait),
-                    stride,
+                    -(hip.upper_len + hip.lower_len) + lift * (0.10 + 0.08 * gait) + jump_leg_tuck,
+                    stride * leg_stride_scale + jump_leg_forward,
                 );
             let mut ankle_target_world = test_root + root_world_rotation * nominal_local;
             let nominal_ankle_y = ankle_target_world.y;
@@ -387,8 +443,8 @@ pub(super) fn animate_procedural_human(
         let nominal_local = hip.base_local
             + Vec3::new(
                 0.0,
-                -(hip.upper_len + hip.lower_len) + lift * (0.10 + 0.08 * gait),
-                stride,
+                -(hip.upper_len + hip.lower_len) + lift * (0.10 + 0.08 * gait) + jump_leg_tuck,
+                stride * leg_stride_scale + jump_leg_forward,
             );
         let mut ankle_target_world = root_world_translation + root_world_rotation * nominal_local;
         let nominal_ankle_y = ankle_target_world.y;
@@ -458,10 +514,9 @@ pub(super) fn animate_procedural_human(
         };
         let swing = (anim_state.phase + side_phase).sin();
         let idle = (time.elapsed_secs() * 1.8 + side_phase).sin() * 0.07 * (1.0 - speed_factor);
-        let pitch = swing * (0.15 + 0.72 * speed_factor) + idle;
+        let pitch = swing * (0.15 + 0.72 * speed_factor) + idle + jump_arm_pitch;
         let forearm_ratio = (pivot.lower_len / pivot.upper_len.max(0.05)).clamp(0.7, 1.3);
-        let elbow_bend =
-            (0.35 + 0.30 * speed_factor + 0.20 * (1.0 - swing.abs())) * forearm_ratio;
+        let elbow_bend = (0.35 + 0.30 * speed_factor + 0.20 * (1.0 - swing.abs())) * forearm_ratio;
         let elbow_bend = elbow_bend.clamp(0.2, 1.1);
         let shoulder_yaw = side_sign * 0.22;
         let elbow_counter_yaw = -side_sign * 0.10;
