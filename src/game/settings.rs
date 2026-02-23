@@ -67,6 +67,40 @@ impl ShadowModeSetting {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub(super) enum FogCurveSetting {
+    Linear,
+    Exponential,
+    ExponentialSquared,
+    Atmospheric,
+}
+
+impl FogCurveSetting {
+    pub(super) fn label(self) -> &'static str {
+        match self {
+            Self::Linear => "Linear",
+            Self::Exponential => "Exponential",
+            Self::ExponentialSquared => "Exponential Squared",
+            Self::Atmospheric => "Atmospheric",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub(super) enum FogAnchorSetting {
+    Camera,
+    Character,
+}
+
+impl FogAnchorSetting {
+    pub(super) fn label(self) -> &'static str {
+        match self {
+            Self::Camera => "Camera",
+            Self::Character => "Character",
+        }
+    }
+}
+
 #[derive(Resource, Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub(super) struct GameSettings {
@@ -99,6 +133,19 @@ pub(super) struct DebugSettings {
     pub(super) show_performance_overlay: bool,
     pub(super) show_baked_shadows: bool,
     pub(super) show_fog: bool,
+    pub(super) fog_anchor: FogAnchorSetting,
+    pub(super) fog_curve: FogCurveSetting,
+    pub(super) fog_start: f32,
+    pub(super) fog_end: f32,
+    pub(super) fog_density: f32,
+    pub(super) fog_use_visibility: bool,
+    pub(super) fog_visibility_distance: f32,
+    pub(super) fog_visibility_transmittance: f32,
+    pub(super) fog_clear_offset: f32,
+    pub(super) fog_color: (f32, f32, f32),
+    pub(super) fog_opacity: f32,
+    // Legacy field kept for backwards compatibility with older persisted configs.
+    pub(super) fog_curvature: f32,
     pub(super) show_collision_shapes: bool,
     pub(super) show_animation_debug: bool,
     pub(super) show_wireframe: bool,
@@ -111,6 +158,18 @@ impl Default for DebugSettings {
             show_performance_overlay: true,
             show_baked_shadows: true,
             show_fog: true,
+            fog_anchor: FogAnchorSetting::Character,
+            fog_curve: FogCurveSetting::ExponentialSquared,
+            fog_start: 22.0,
+            fog_end: 78.0,
+            fog_density: 0.0125,
+            fog_use_visibility: true,
+            fog_visibility_distance: 78.0,
+            fog_visibility_transmittance: 0.02,
+            fog_clear_offset: 0.0,
+            fog_color: (0.62, 0.72, 0.84),
+            fog_opacity: 1.0,
+            fog_curvature: 1.0,
             show_collision_shapes: false,
             show_animation_debug: false,
             show_wireframe: false,

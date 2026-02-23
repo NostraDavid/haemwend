@@ -1,4 +1,5 @@
 use super::*;
+use bevy_egui::{EguiContexts, PrimaryEguiContext, egui};
 
 pub(super) fn setup_start_menu(
     mut commands: Commands,
@@ -155,14 +156,348 @@ pub(super) fn load_pending_scenario(
 }
 
 fn default_distance_fog() -> DistanceFog {
-    DistanceFog {
-        color: Color::srgba(0.62, 0.72, 0.84, 1.0),
-        directional_light_color: Color::srgba(0.97, 0.88, 0.70, 0.5),
-        directional_light_exponent: 20.0,
-        falloff: FogFalloff::Linear {
-            start: 22.0,
-            end: 78.0,
+    distance_fog_from_debug(&DebugSettings::default(), 0.0)
+}
+
+#[derive(Clone, Copy)]
+enum FogPreset {
+    Near,
+    Medium,
+    Far,
+}
+
+fn apply_fog_preset(debug: &mut DebugSettings, preset: FogPreset) {
+    match preset {
+        FogPreset::Near => {
+            debug.fog_start = 10.0;
+            debug.fog_end = 32.0;
+            debug.fog_visibility_distance = 28.0;
+            debug.fog_density = 0.045;
+        }
+        FogPreset::Medium => {
+            debug.fog_start = 22.0;
+            debug.fog_end = 78.0;
+            debug.fog_visibility_distance = 78.0;
+            debug.fog_density = 0.0125;
+        }
+        FogPreset::Far => {
+            debug.fog_start = 40.0;
+            debug.fog_end = 160.0;
+            debug.fog_visibility_distance = 150.0;
+            debug.fog_density = 0.0045;
+        }
+    }
+}
+
+fn fog_linear_bounds(debug: &DebugSettings, anchor_offset: f32) -> (f32, f32) {
+    let clear = debug.fog_clear_offset.max(0.0) + anchor_offset.max(0.0);
+    let start = (debug.fog_start.max(0.0) + clear).max(0.0);
+    let end = (debug.fog_end.max(debug.fog_start + 0.1) + clear).max(start + 0.1);
+    (start, end)
+}
+
+fn density_from_visibility(visibility_distance: f32, transmittance: f32, squared: bool) -> f32 {
+    let visibility = visibility_distance.max(0.1);
+    let t = transmittance.clamp(0.001, 0.99);
+    let neg_ln_t = -t.ln();
+    let density = if squared {
+        neg_ln_t.sqrt() / visibility
+    } else {
+        neg_ln_t / visibility
+    };
+    density.max(0.00001)
+}
+
+fn fog_density(debug: &DebugSettings, anchor_offset: f32, squared: bool) -> f32 {
+    if debug.fog_use_visibility {
+        let distance = (debug.fog_visibility_distance.max(0.1) + debug.fog_clear_offset.max(0.0))
+            + anchor_offset.max(0.0);
+        density_from_visibility(distance, debug.fog_visibility_transmittance, squared)
+    } else {
+        debug.fog_density.max(0.00001)
+    }
+}
+
+fn distance_fog_from_debug(debug: &DebugSettings, anchor_offset: f32) -> DistanceFog {
+    let (start, end) = fog_linear_bounds(debug, anchor_offset);
+    let exp_density = fog_density(debug, anchor_offset, false);
+    let exp2_density = fog_density(debug, anchor_offset, true);
+    let falloff = match debug.fog_curve {
+        FogCurveSetting::Linear => FogFalloff::Linear { start, end },
+        FogCurveSetting::Exponential => FogFalloff::Exponential {
+            density: exp_density,
         },
+        FogCurveSetting::ExponentialSquared => FogFalloff::ExponentialSquared {
+            density: exp2_density,
+        },
+        FogCurveSetting::Atmospheric => {
+            let d = exp_density;
+            FogFalloff::Atmospheric {
+                extinction: Vec3::splat(d),
+                inscattering: Vec3::splat(d),
+            }
+        }
+    };
+
+    let fog_color = (
+        debug.fog_color.0.clamp(0.0, 1.0),
+        debug.fog_color.1.clamp(0.0, 1.0),
+        debug.fog_color.2.clamp(0.0, 1.0),
+    );
+
+    DistanceFog {
+        // Keep values in linear space and let the render pipeline handle tonemapping afterwards.
+        color: Color::linear_rgba(
+            fog_color.0,
+            fog_color.1,
+            fog_color.2,
+            debug.fog_opacity.clamp(0.0, 1.0),
+        ),
+        directional_light_color: Color::NONE,
+        directional_light_exponent: 0.0,
+        falloff,
+    }
+}
+
+pub(super) fn fog_debug_sliders_ui(
+    mut contexts: EguiContexts,
+    menu: Res<MenuState>,
+    settings: Res<GameSettings>,
+    keybinds: Res<GameKeybinds>,
+    mut debug: ResMut<DebugSettings>,
+) {
+    if !menu.open || menu.screen != MenuScreen::Debug {
+        return;
+    }
+
+    let Ok(ctx) = contexts.ctx_mut() else {
+        return;
+    };
+
+    let mut changed = false;
+
+    egui::Window::new("Fog Settings")
+        .collapsible(false)
+        .resizable(false)
+        .default_width(320.0)
+        .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-18.0, 18.0))
+        .show(ctx, |ui| {
+            ui.label("Fog parameters (live)");
+
+            let mut anchor = debug.fog_anchor;
+
+            egui::ComboBox::from_label("Anchor")
+                .selected_text(anchor.label())
+                .show_ui(ui, |ui| {
+                    changed |= ui
+                        .selectable_value(
+                            &mut anchor,
+                            FogAnchorSetting::Character,
+                            FogAnchorSetting::Character.label(),
+                        )
+                        .changed();
+                    changed |= ui
+                        .selectable_value(
+                            &mut anchor,
+                            FogAnchorSetting::Camera,
+                            FogAnchorSetting::Camera.label(),
+                        )
+                        .changed();
+                });
+            if anchor != debug.fog_anchor {
+                debug.fog_anchor = anchor;
+                changed = true;
+            }
+
+            let mut curve = debug.fog_curve;
+            egui::ComboBox::from_label("Curve")
+                .selected_text(curve.label())
+                .show_ui(ui, |ui| {
+                    changed |= ui
+                        .selectable_value(
+                            &mut curve,
+                            FogCurveSetting::Linear,
+                            FogCurveSetting::Linear.label(),
+                        )
+                        .changed();
+                    changed |= ui
+                        .selectable_value(
+                            &mut curve,
+                            FogCurveSetting::Exponential,
+                            FogCurveSetting::Exponential.label(),
+                        )
+                        .changed();
+                    changed |= ui
+                        .selectable_value(
+                            &mut curve,
+                            FogCurveSetting::ExponentialSquared,
+                            FogCurveSetting::ExponentialSquared.label(),
+                        )
+                        .changed();
+                    changed |= ui
+                        .selectable_value(
+                            &mut curve,
+                            FogCurveSetting::Atmospheric,
+                            FogCurveSetting::Atmospheric.label(),
+                        )
+                        .changed();
+                });
+            if curve != debug.fog_curve {
+                debug.fog_curve = curve;
+                changed = true;
+            }
+
+            let mut clear_offset = debug.fog_clear_offset;
+            let clear_offset_changed = ui
+                .add(egui::Slider::new(&mut clear_offset, 0.0..=80.0).text("Clear offset"))
+                .on_hover_text("Extra heldere zone rond de anchor (camera of character).")
+                .changed();
+            if clear_offset_changed {
+                debug.fog_clear_offset = clear_offset.max(0.0);
+                changed = true;
+            }
+
+            let mut color = [debug.fog_color.0, debug.fog_color.1, debug.fog_color.2];
+            ui.horizontal(|ui| {
+                ui.label("Fog color");
+                if ui.color_edit_button_rgb(&mut color).changed() {
+                    debug.fog_color = (
+                        color[0].clamp(0.0, 1.0),
+                        color[1].clamp(0.0, 1.0),
+                        color[2].clamp(0.0, 1.0),
+                    );
+                    changed = true;
+                }
+            });
+
+            let mut opacity = debug.fog_opacity;
+            let opacity_changed = ui
+                .add(egui::Slider::new(&mut opacity, 0.0..=1.0).text("Opacity"))
+                .on_hover_text("Maximale dekkingsgraad van mist.")
+                .changed();
+            if opacity_changed {
+                debug.fog_opacity = opacity.clamp(0.0, 1.0);
+                changed = true;
+            }
+
+            if debug.fog_curve == FogCurveSetting::Linear {
+                let mut start = debug.fog_start;
+                let start_changed = ui
+                    .add(egui::Slider::new(&mut start, 0.0..=250.0).text("Start"))
+                    .on_hover_text("Afstand waar lineaire mist begint.")
+                    .changed();
+                if start_changed {
+                    debug.fog_start = start.max(0.0);
+                    if debug.fog_end < debug.fog_start + 0.1 {
+                        debug.fog_end = debug.fog_start + 0.1;
+                    }
+                    changed = true;
+                }
+
+                let mut end = debug.fog_end;
+                let end_changed = ui
+                    .add(egui::Slider::new(&mut end, (debug.fog_start + 0.1)..=400.0).text("End"))
+                    .on_hover_text("Afstand waar lineaire mist volledig dekt.")
+                    .changed();
+                if end_changed {
+                    debug.fog_end = end.max(debug.fog_start + 0.1);
+                    changed = true;
+                }
+            } else {
+                let mut use_visibility = debug.fog_use_visibility;
+                if ui
+                    .checkbox(&mut use_visibility, "Use visibility distance")
+                    .on_hover_text(
+                        "Rekent density uit met d = -ln(t)/V (of sqrt variant voor Exp2).",
+                    )
+                    .changed()
+                {
+                    debug.fog_use_visibility = use_visibility;
+                    changed = true;
+                }
+
+                if debug.fog_use_visibility {
+                    let mut visibility = debug.fog_visibility_distance;
+                    if ui
+                        .add(
+                            egui::Slider::new(&mut visibility, 1.0..=500.0)
+                                .text("Visibility distance"),
+                        )
+                        .on_hover_text("Gewenste zichtafstand V in world units.")
+                        .changed()
+                    {
+                        debug.fog_visibility_distance = visibility.max(0.1);
+                        changed = true;
+                    }
+
+                    let mut transmittance = debug.fog_visibility_transmittance;
+                    if ui
+                        .add(
+                            egui::Slider::new(&mut transmittance, 0.001..=0.5)
+                                .logarithmic(true)
+                                .text("Transmittance @ V"),
+                        )
+                        .on_hover_text("Doel-transmittance t op afstand V.")
+                        .changed()
+                    {
+                        debug.fog_visibility_transmittance = transmittance.clamp(0.001, 0.99);
+                        changed = true;
+                    }
+                } else {
+                    let mut density = debug.fog_density;
+                    if ui
+                        .add(
+                            egui::Slider::new(&mut density, 0.00001..=0.2)
+                                .logarithmic(true)
+                                .text("Density"),
+                        )
+                        .on_hover_text("Handmatige density voor Exp/Exp2/Atmospheric.")
+                        .changed()
+                    {
+                        debug.fog_density = density.max(0.00001);
+                        changed = true;
+                    }
+                }
+            }
+
+            if debug.fog_anchor == FogAnchorSetting::Character {
+                ui.small("Character-anchor compenseert camera-afstand.");
+            }
+
+            ui.separator();
+            egui::CollapsingHeader::new("(i) Info: invloed per variabele")
+                .default_open(false)
+                .show(ui, |ui| {
+                    ui.small("Anchor: bepaalt of fog meebeweegt met de camera of met de player.");
+                    ui.small("Curve: linear, exp, exp2, of atmospheric falloff.");
+                    ui.small("Linear gebruikt Start/End.");
+                    ui.small("Exp/Exp2 gebruiken óf density óf visibility-model.");
+                    ui.small("Clear offset voegt een heldere buffer rond de anchor toe.");
+                    ui.small("Fog color + opacity sturen blendkleur en maximale dekking.");
+                    ui.small(
+                        "Distance metric is hier camera-range (euclidisch), niet view-space z.",
+                    );
+                });
+
+            ui.separator();
+            ui.horizontal(|ui| {
+                if ui.button("Dichtbij").clicked() {
+                    apply_fog_preset(&mut debug, FogPreset::Near);
+                    changed = true;
+                }
+                if ui.button("Middel").clicked() {
+                    apply_fog_preset(&mut debug, FogPreset::Medium);
+                    changed = true;
+                }
+                if ui.button("Veraf").clicked() {
+                    apply_fog_preset(&mut debug, FogPreset::Far);
+                    changed = true;
+                }
+            });
+        });
+
+    if changed {
+        save_persisted_config(&settings, &keybinds, &debug);
     }
 }
 
@@ -478,6 +813,7 @@ pub(super) fn spawn_scenario_world(
 
     commands.spawn((
         Camera3d::default(),
+        PrimaryEguiContext,
         Transform::from_xyz(0.0, 4.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
         ThirdPersonCameraRig::default(),
         Msaa::Sample4,
@@ -787,7 +1123,6 @@ pub(super) fn handle_menu_buttons(
     mut menu: ResMut<MenuState>,
     mut settings: ResMut<GameSettings>,
     mut debug: ResMut<DebugSettings>,
-    keybinds: ResMut<GameKeybinds>,
     in_game_entities: Query<Entity, With<InGameEntity>>,
     start_menu_roots: Query<Entity, With<StartMenuRoot>>,
     start_menu_cameras: Query<Entity, With<StartMenuCamera>>,
@@ -796,8 +1131,6 @@ pub(super) fn handle_menu_buttons(
     if !menu.open {
         return;
     }
-
-    let mut should_save = false;
 
     for (interaction, menu_button, mut background) in &mut interactions {
         match *interaction {
@@ -858,7 +1191,6 @@ pub(super) fn handle_menu_buttons(
                     }
                     MenuButtonAction::CycleDisplayMode => {
                         settings.display_mode = settings.display_mode.next();
-                        should_save = true;
                     }
                     MenuButtonAction::CycleResolution => {
                         let current = (settings.resolution_width, settings.resolution_height);
@@ -870,43 +1202,33 @@ pub(super) fn handle_menu_buttons(
                         let next = RESOLUTION_OPTIONS[next_idx];
                         settings.resolution_width = next.0;
                         settings.resolution_height = next.1;
-                        should_save = true;
                     }
                     MenuButtonAction::ToggleMsaa => {
                         settings.msaa_enabled = !settings.msaa_enabled;
-                        should_save = true;
                     }
                     MenuButtonAction::ToggleShadowMode => {
                         settings.shadow_mode = settings.shadow_mode.next();
-                        should_save = true;
                     }
                     MenuButtonAction::TogglePerformanceOverlay => {
                         debug.show_performance_overlay = !debug.show_performance_overlay;
-                        should_save = true;
                     }
                     MenuButtonAction::ToggleBakedShadows => {
                         debug.show_baked_shadows = !debug.show_baked_shadows;
-                        should_save = true;
                     }
                     MenuButtonAction::ToggleFog => {
                         debug.show_fog = !debug.show_fog;
-                        should_save = true;
                     }
                     MenuButtonAction::ToggleCollisionShapes => {
                         debug.show_collision_shapes = !debug.show_collision_shapes;
-                        should_save = true;
                     }
                     MenuButtonAction::ToggleAnimationDebug => {
                         debug.show_animation_debug = !debug.show_animation_debug;
-                        should_save = true;
                     }
                     MenuButtonAction::ToggleWireframe => {
                         debug.show_wireframe = !debug.show_wireframe;
-                        should_save = true;
                     }
                     MenuButtonAction::ToggleWorldAxes => {
                         debug.show_world_axes = !debug.show_world_axes;
-                        should_save = true;
                     }
                     MenuButtonAction::StartRebind(action) => {
                         menu.screen = MenuScreen::Keybinds;
@@ -927,17 +1249,11 @@ pub(super) fn handle_menu_buttons(
             }
         }
     }
-
-    if should_save {
-        save_persisted_config(&settings, &keybinds, &debug);
-    }
 }
 
 pub(super) fn capture_rebind_input(
     keys: Res<ButtonInput<KeyCode>>,
     mut menu: ResMut<MenuState>,
-    settings: Res<GameSettings>,
-    debug: Res<DebugSettings>,
     mut keybinds: ResMut<GameKeybinds>,
 ) {
     if !menu.open || menu.screen != MenuScreen::Keybinds {
@@ -953,15 +1269,12 @@ pub(super) fn capture_rebind_input(
             continue;
         }
 
-        let changed = if keybinds.has_key(action, *key) {
+        if keybinds.has_key(action, *key) {
             keybinds.remove_key(action, *key)
         } else {
             keybinds.add_key(action, *key)
         };
         menu.awaiting_rebind = None;
-        if changed {
-            save_persisted_config(&settings, &keybinds, &debug);
-        }
         menu.dirty = true;
         break;
     }
@@ -995,6 +1308,16 @@ pub(super) fn capture_keybind_filter_input(
     }
 }
 
+pub(super) fn persist_config_on_change(
+    settings: Res<GameSettings>,
+    keybinds: Res<GameKeybinds>,
+    debug: Res<DebugSettings>,
+) {
+    if settings.is_changed() || keybinds.is_changed() || debug.is_changed() {
+        save_persisted_config(&settings, &keybinds, &debug);
+    }
+}
+
 pub(super) fn rebuild_menu_ui(
     mut commands: Commands,
     flow: Res<GameFlowState>,
@@ -1023,13 +1346,10 @@ pub(super) fn rebuild_menu_ui(
             GlobalZIndex(500),
             Node {
                 position_type: PositionType::Absolute,
-                width: percent(100),
-                height: percent(100),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
+                left: px(16),
+                bottom: px(16),
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.72)),
         ))
         .with_children(|root| {
             root.spawn((
@@ -1404,7 +1724,8 @@ pub(super) fn apply_runtime_settings(
     settings: Res<GameSettings>,
     debug: Res<DebugSettings>,
     primary_window: Single<&mut Window, With<PrimaryWindow>>,
-    camera_entities: Query<Entity, With<Camera3d>>,
+    camera_entities: Query<(Entity, &Transform), With<Camera3d>>,
+    player_transforms: Query<&Transform, With<Player>>,
     player_entities: Query<(Entity, Has<NotShadowCaster>), With<Player>>,
     player_visual_entities: Query<(Entity, Has<NotShadowCaster>), With<PlayerVisualPart>>,
     mut lights: Query<&mut DirectionalLight>,
@@ -1449,18 +1770,31 @@ pub(super) fn apply_runtime_settings(
         );
     }
 
-    if let Ok(camera) = camera_entities.single() {
+    if let Ok((camera, camera_transform)) = camera_entities.single() {
         if settings.msaa_enabled {
             commands.entity(camera).insert(Msaa::Sample4);
         } else {
             commands.entity(camera).insert(Msaa::Off);
         }
 
+        let anchor_offset = if debug.fog_anchor == FogAnchorSetting::Character {
+            player_transforms
+                .single()
+                .map(|player_transform| {
+                    camera_transform
+                        .translation
+                        .distance(player_transform.translation)
+                })
+                .unwrap_or(0.0)
+        } else {
+            0.0
+        };
+
         let has_fog = camera_has_fog.get(camera).is_ok();
         if debug.show_fog {
-            if !has_fog {
-                commands.entity(camera).insert(default_distance_fog());
-            }
+            commands
+                .entity(camera)
+                .insert(distance_fog_from_debug(&debug, anchor_offset));
         } else if has_fog {
             commands.entity(camera).remove::<DistanceFog>();
         }

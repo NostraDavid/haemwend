@@ -6,6 +6,7 @@ use bevy::pbr::wireframe::Wireframe;
 use bevy::pbr::wireframe::WireframePlugin;
 use bevy::prelude::*;
 use bevy::window::{CursorGrabMode, CursorOptions, PresentMode, PrimaryWindow, WindowResolution};
+use bevy_egui::{EguiPlugin, EguiPrimaryContextPass};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -71,6 +72,7 @@ pub fn run() {
                 ..default()
             },
             WireframePlugin::default(),
+            EguiPlugin::default(),
         ))
         .insert_resource(initial_settings)
         .insert_resource(initial_keybinds)
@@ -103,6 +105,7 @@ pub fn run() {
                 capture_keybind_filter_input,
                 apply_runtime_settings,
                 rebuild_menu_ui,
+                persist_config_on_change,
             )
                 .chain(),
         )
@@ -124,5 +127,6 @@ pub fn run() {
             Update,
             (configure_debug_gizmo_depth, draw_debug_geometry).chain(),
         )
+        .add_systems(EguiPrimaryContextPass, fog_debug_sliders_ui)
         .run();
 }
