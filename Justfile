@@ -62,6 +62,15 @@ blender-table-export out="" opts="":
   blender -b --factory-startup --python "assets/blender_ai/table.py" -- --validate {{opts}} --export-glb "${out_path}"; \
   echo "glb: ${out_path}"
 
+blender-tree-validate opts="":
+  blender -b --factory-startup --python assets/blender_ai/tree_generator_addon.py -- --clear --validate {{opts}}
+
+blender-tree-export out="" opts="":
+  out_path="{{out}}"; \
+  if [ -z "${out_path}" ]; then out_path="assets/models/tree.glb"; fi; \
+  blender -b --factory-startup --python assets/blender_ai/tree_generator_addon.py -- --clear --validate {{opts}} --export-glb "${out_path}"; \
+  echo "glb: ${out_path}"
+
 check:
   cargo check
 

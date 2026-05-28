@@ -18,3 +18,7 @@
 !perf/
 !assets/
 !config/
+
+# reignore
+*.pyc
+__pycache__/
