@@ -39,6 +39,7 @@ pub(super) struct MouseLookCaptureState {
 }
 
 #[derive(Component)]
+#[require(Visibility)]
 pub(super) struct Player {
     pub(super) walk_speed: f32,
     pub(super) sprint_speed: f32,
@@ -102,6 +103,7 @@ pub(super) struct StartMenuRoot;
 pub(super) struct StartMenuCamera;
 
 #[derive(Component)]
+#[require(Visibility)]
 pub(super) struct ProceduralHumanVisualRoot;
 
 #[derive(Component)]
@@ -121,6 +123,7 @@ pub(super) enum LimbSide {
 }
 
 #[derive(Component)]
+#[require(Visibility)]
 pub(super) struct HumanLegHip {
     pub(super) side: LimbSide,
     pub(super) base_local: Vec3,
@@ -130,6 +133,7 @@ pub(super) struct HumanLegHip {
 }
 
 #[derive(Component)]
+#[require(Visibility)]
 pub(super) struct HumanArmPivot {
     pub(super) side: LimbSide,
     pub(super) base_local: Vec3,
@@ -146,9 +150,11 @@ pub(super) struct HumanHead {
 }
 
 #[derive(Component)]
+#[require(Visibility)]
 pub(super) struct HumanLegKnee;
 
 #[derive(Component)]
+#[require(Visibility)]
 pub(super) struct HumanArmElbow;
 
 #[derive(Component, Clone, Copy)]

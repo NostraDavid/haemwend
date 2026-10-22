@@ -164,11 +164,11 @@ pub(super) fn write_default_scenarios_to_dir(path: &Path) -> bool {
 }
 
 pub(super) fn write_default_scenarios_to_file(path: &Path) -> bool {
-    if let Some(parent) = path.parent() {
-        if let Err(err) = fs::create_dir_all(parent) {
-            eprintln!("Kon scenario-map niet maken ({}): {err}", parent.display());
-            return false;
-        }
+    if let Some(parent) = path.parent()
+        && let Err(err) = fs::create_dir_all(parent)
+    {
+        eprintln!("Kon scenario-map niet maken ({}): {err}", parent.display());
+        return false;
     }
 
     let serialized =
@@ -204,9 +204,8 @@ pub(super) fn load_scenarios_from_file(path: &Path) -> Vec<ScenarioDefinition> {
         }
     };
 
-    match ron::from_str::<Vec<ScenarioDefinition>>(&content) {
-        Ok(scenarios) => return filter_valid_scenarios(scenarios, &source),
-        Err(_) => {}
+    if let Ok(scenarios) = ron::from_str::<Vec<ScenarioDefinition>>(&content) {
+        return filter_valid_scenarios(scenarios, &source);
     }
 
     match ron::from_str::<ScenarioDefinition>(&content) {
@@ -299,10 +298,8 @@ pub(super) fn load_scenario_catalog(path: &Path) -> ScenarioCatalog {
         Vec::new()
     };
 
-    if scenarios.is_empty() {
-        if path.is_dir() && write_default_scenarios_to_dir(path) {
-            scenarios = load_scenarios_from_dir(path);
-        }
+    if scenarios.is_empty() && path.is_dir() && write_default_scenarios_to_dir(path) {
+        scenarios = load_scenarios_from_dir(path);
     }
 
     if scenarios.is_empty() {
@@ -341,11 +338,11 @@ pub(super) fn save_persisted_config(
     };
 
     let path = Path::new(CONFIG_PATH);
-    if let Some(parent) = path.parent() {
-        if let Err(err) = fs::create_dir_all(parent) {
-            eprintln!("Kon config-map niet maken ({}): {err}", parent.display());
-            return;
-        }
+    if let Some(parent) = path.parent()
+        && let Err(err) = fs::create_dir_all(parent)
+    {
+        eprintln!("Kon config-map niet maken ({}): {err}", parent.display());
+        return;
     }
 
     let pretty = ron::ser::PrettyConfig::default();
@@ -430,10 +427,10 @@ pub(super) fn keycodes_from_names(raw: &str) -> Vec<KeyCode> {
         if key_name.is_empty() {
             continue;
         }
-        if let Some(key) = keycode_from_name(key_name) {
-            if !out.contains(&key) {
-                out.push(key);
-            }
+        if let Some(key) = keycode_from_name(key_name)
+            && !out.contains(&key)
+        {
+            out.push(key);
         }
     }
     out
@@ -568,5 +565,18 @@ pub(super) fn keycode_from_name(name: &str) -> Option<KeyCode> {
         "F11" => Some(KeyCode::F11),
         "F12" => Some(KeyCode::F12),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn saved_keybinds_roundtrip_and_skip_invalid_duplicates() {
+        let keys = vec![KeyCode::KeyW, KeyCode::Space];
+        assert_eq!(keycodes_from_names(&keycodes_to_names(&keys)), keys);
+        assert_eq!(keycodes_from_names(" KeyW ||invalid|Space|KeyW| "), keys);
+        assert!(keycodes_from_names("|invalid| ").is_empty());
     }
 }

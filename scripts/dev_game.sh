@@ -7,4 +7,4 @@ watch_args=(
   -w Cargo.lock
 )
 
-exec cargo watch "${watch_args[@]}" -x "run --features bevy/file_watcher --bin haemwend"
+exec cargo watch "${watch_args[@]}" -x "run --locked --features bevy/file_watcher --bin haemwend"

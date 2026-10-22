@@ -228,8 +228,10 @@ fn draw_param_control(
                 })
                 .inner
             };
-            if response.changed() {
-                values.insert(param.key.clone(), format!("{value:.6}"));
+            let formatted = format!("{value:.6}");
+            // Slider snapping can change the float without changing its stored precision.
+            if response.changed() && formatted != current {
+                values.insert(param.key.clone(), formatted);
                 true
             } else {
                 false
@@ -299,4 +301,34 @@ fn draw_param_control(
     }
 
     changed
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn idle_float_slider_does_not_keep_rebuilding_the_preview() {
+        let param = ParamDefinition {
+            key: "top-warp".into(),
+            label: "Top Warp".into(),
+            kind: "float".into(),
+            default: "0.021000".into(),
+            min: Some(0.0),
+            max: Some(0.03),
+            step: Some(0.001),
+            help: None,
+        };
+        let mut values = HashMap::from([(param.key.clone(), param.default.clone())]);
+        let context = egui::Context::default();
+        let mut changed = false;
+        for _ in 0..3 {
+            let _ = context.run(egui::RawInput::default(), |ctx| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    changed |= draw_param_control(ui, &mut values, &param);
+                });
+            });
+        }
+        assert!(!changed, "an idle slider repeatedly dirtied the preview");
+    }
 }

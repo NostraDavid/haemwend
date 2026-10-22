@@ -8,7 +8,7 @@ Voor dit project is de praktische workflow:
 ## Starten
 
 ```bash
-nix develop
+direnv allow
 ./scripts/dev_game.sh
 ```
 
@@ -26,5 +26,5 @@ Wat dit script doet:
 ## Handmatig (zonder script)
 
 ```bash
-cargo watch -w src -w Cargo.toml -w Cargo.lock -x "run --features bevy/file_watcher --bin haemwend"
+cargo watch -w src -w Cargo.toml -w Cargo.lock -x "run --locked --features bevy/file_watcher --bin haemwend"
 ```

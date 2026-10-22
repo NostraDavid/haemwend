@@ -16,16 +16,16 @@ jobs:
 
     steps:
       - name: Checkout head
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v10.3.2
 
       - name: Cache cargo build
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@v2.9.3
 
       - name: Run head scenarios
         run: |
@@ -76,14 +76,14 @@ jobs:
           echo "Base branch bevat nog geen perf benchmark harness; vergelijking wordt overgeslagen."
 
       - name: Upload head artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: perf-head-results
           path: /tmp/perf_head.csv
 
       - name: Upload base artifact
         if: github.event_name == 'pull_request' && steps.base_support.outputs.supported == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: perf-base-results
           path: /tmp/perf_base.csv

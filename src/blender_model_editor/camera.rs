@@ -93,7 +93,7 @@ pub fn update_camera_viewport(
         return;
     }
 
-    let panel_px = (ui_state.side_panel_width.max(0.0) * window.scale_factor() as f32) as u32;
+    let panel_px = (ui_state.side_panel_width.max(0.0) * window.scale_factor()) as u32;
     let viewport_x = panel_px.min(physical_width.saturating_sub(1));
     let viewport_width = physical_width.saturating_sub(viewport_x).max(1);
 
@@ -193,10 +193,10 @@ pub fn sync_mouse_capture(
         cursor_options.visible = false;
         cursor_options.grab_mode = CursorGrabMode::Locked;
     } else {
-        if capture_state.active {
-            if let Some(pos) = capture_state.restore_position.take() {
-                window.set_cursor_position(Some(pos));
-            }
+        if capture_state.active
+            && let Some(pos) = capture_state.restore_position.take()
+        {
+            window.set_cursor_position(Some(pos));
         }
         capture_state.active = false;
         cursor_options.visible = true;

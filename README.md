@@ -4,7 +4,7 @@ Realtime Bevy-project met een Blender AI asset-workflow voor stylized modellen.
 
 ## Vereisten
 
-- `nix` (aanbevolen) of een lokale Rust-toolchain
+- Nix, devenv en direnv, of een lokale Rust-toolchain
 - `cargo`, `just`, `cargo-watch`
 - `blender` (CLI beschikbaar in `PATH`)
 - `git-lfs` (voor `.glb` en `.png`)
@@ -12,14 +12,14 @@ Realtime Bevy-project met een Blender AI asset-workflow voor stylized modellen.
 ## Snel starten
 
 ```bash
-nix develop
+direnv allow
 just run
 ```
 
 Hot-reload workflow:
 
 ```bash
-nix develop
+direnv allow
 just run-hot
 ```
 
@@ -77,3 +77,6 @@ Persistente presets staan in:
 
 - `assets/blender_ai/README.md`: Blender assetpipeline
 - `assets/blender_ai/AGENT.md`: stijlregels en bronnen voor stylized assets
+
+`just update` vernieuwt de Cargo-dependencies. Controleer daarna met `just ci`.
+De devenv-omgeving levert ook Blender, git-lfs en de native Bevy-bibliotheken.

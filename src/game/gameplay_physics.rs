@@ -132,8 +132,9 @@ pub(super) fn player_move(
     next_position.x = slid_position.x;
     next_position.z = slid_position.z;
 
-    if blocked && kinematics.grounded {
-        if let Some(step_position) = try_step_move(
+    if blocked
+        && kinematics.grounded
+        && let Some(step_position) = try_step_move(
             transform.translation,
             desired_delta,
             *player_collider,
@@ -141,9 +142,9 @@ pub(super) fn player_move(
             CONTROLLER_STEP_HEIGHT,
             CONTROLLER_STEP_DROP,
             CONTROLLER_SKIN,
-        ) {
-            next_position = step_position;
-        }
+        )
+    {
+        next_position = step_position;
     }
 
     let actual_horizontal_delta = Vec2::new(
@@ -350,12 +351,12 @@ pub(super) fn animate_procedural_human(
 
     let mut head_yaw_target = 0.0;
     let mut head_pitch_target = 0.0;
-    if mouse_buttons.pressed(MouseButton::Left) {
-        if let Ok(camera_rig) = camera_query.single() {
-            let (player_yaw, _, _) = player_transform.rotation.to_euler(EulerRot::YXZ);
-            head_yaw_target = shortest_angle_delta(player_yaw, camera_rig.yaw);
-            head_pitch_target = -camera_rig.pitch;
-        }
+    if mouse_buttons.pressed(MouseButton::Left)
+        && let Ok(camera_rig) = camera_query.single()
+    {
+        let (player_yaw, _, _) = player_transform.rotation.to_euler(EulerRot::YXZ);
+        head_yaw_target = shortest_angle_delta(player_yaw, camera_rig.yaw);
+        head_pitch_target = -camera_rig.pitch;
     }
 
     let gait = smoothstep01(((speed_factor - 0.10) / 0.25).clamp(0.0, 1.0));
@@ -408,38 +409,35 @@ pub(super) fn animate_procedural_human(
                 ankle_target_world.z,
             );
 
-            if ground_ik_weight > 0.01 {
-                if let Some(ground_y) = sample_ground_height(&world_collision_grid, probe, 0.12) {
-                    let planted_y = ground_y + hip.ankle_height;
-                    let support_delta = planted_y - nominal_ankle_y;
-                    if support_delta < -foot_support_max_drop
-                        || support_delta > foot_support_max_rise
-                    {
-                        continue;
-                    }
-                    let stance = 1.0 - lift;
-                    let plant_strength =
-                        ((0.82 + (1.0 - gait) * 0.16) * ground_ik_weight).clamp(0.0, 0.98);
-                    ankle_target_world.y = ankle_target_world.y.max(planted_y);
-                    ankle_target_world.y = ankle_target_world.y * (1.0 - stance * plant_strength)
-                        + planted_y * (stance * plant_strength);
-
-                    let target_local =
-                        root_world_rotation.inverse() * (ankle_target_world - test_root);
-                    let to_target = target_local - leg_base_local;
-                    let dy = to_target.y;
-                    let dz = to_target.z;
-                    let leg_total = hip.upper_len + hip.lower_len;
-                    let max_reach = (leg_total - 0.015).max(0.05);
-                    if dz.abs() >= max_reach {
-                        continue;
-                    }
-
-                    let reachable_dy = -(max_reach * max_reach - dz * dz).sqrt();
-                    let needed = (reachable_dy - dy).max(0.0);
-                    required_drop =
-                        required_drop.max(needed * (1.0 - 0.35 * swing.abs()) * ground_ik_weight);
+            if ground_ik_weight > 0.01
+                && let Some(ground_y) = sample_ground_height(&world_collision_grid, probe, 0.12)
+            {
+                let planted_y = ground_y + hip.ankle_height;
+                let support_delta = planted_y - nominal_ankle_y;
+                if support_delta < -foot_support_max_drop || support_delta > foot_support_max_rise {
+                    continue;
                 }
+                let stance = 1.0 - lift;
+                let plant_strength =
+                    ((0.82 + (1.0 - gait) * 0.16) * ground_ik_weight).clamp(0.0, 0.98);
+                ankle_target_world.y = ankle_target_world.y.max(planted_y);
+                ankle_target_world.y = ankle_target_world.y * (1.0 - stance * plant_strength)
+                    + planted_y * (stance * plant_strength);
+
+                let target_local = root_world_rotation.inverse() * (ankle_target_world - test_root);
+                let to_target = target_local - leg_base_local;
+                let dy = to_target.y;
+                let dz = to_target.z;
+                let leg_total = hip.upper_len + hip.lower_len;
+                let max_reach = (leg_total - 0.015).max(0.05);
+                if dz.abs() >= max_reach {
+                    continue;
+                }
+
+                let reachable_dy = -(max_reach * max_reach - dz * dz).sqrt();
+                let needed = (reachable_dy - dy).max(0.0);
+                required_drop =
+                    required_drop.max(needed * (1.0 - 0.35 * swing.abs()) * ground_ik_weight);
             }
         }
 
@@ -479,19 +477,18 @@ pub(super) fn animate_procedural_human(
             root_world_translation.y + 2.0,
             ankle_target_world.z,
         );
-        if ground_ik_weight > 0.01 {
-            if let Some(ground_y) = sample_ground_height(&world_collision_grid, probe, 0.12) {
-                let planted_y = ground_y + hip.ankle_height;
-                let support_delta = planted_y - nominal_ankle_y;
-                if support_delta >= -foot_support_max_drop && support_delta <= foot_support_max_rise
-                {
-                    let stance = 1.0 - lift;
-                    let plant_strength =
-                        ((0.82 + (1.0 - gait) * 0.16) * ground_ik_weight).clamp(0.0, 0.98);
-                    ankle_target_world.y = ankle_target_world.y.max(planted_y);
-                    ankle_target_world.y = ankle_target_world.y * (1.0 - stance * plant_strength)
-                        + planted_y * (stance * plant_strength);
-                }
+        if ground_ik_weight > 0.01
+            && let Some(ground_y) = sample_ground_height(&world_collision_grid, probe, 0.12)
+        {
+            let planted_y = ground_y + hip.ankle_height;
+            let support_delta = planted_y - nominal_ankle_y;
+            if support_delta >= -foot_support_max_drop && support_delta <= foot_support_max_rise {
+                let stance = 1.0 - lift;
+                let plant_strength =
+                    ((0.82 + (1.0 - gait) * 0.16) * ground_ik_weight).clamp(0.0, 0.98);
+                ankle_target_world.y = ankle_target_world.y.max(planted_y);
+                ankle_target_world.y = ankle_target_world.y * (1.0 - stance * plant_strength)
+                    + planted_y * (stance * plant_strength);
             }
         }
 
@@ -667,11 +664,10 @@ fn move_with_slide(
                     static_collider.half_extents.x,
                     static_collider.half_extents.z,
                 ),
-            ) {
-                if toi < best_hit_t {
-                    best_hit_t = toi;
-                    best_normal = normal;
-                }
+            ) && toi < best_hit_t
+            {
+                best_hit_t = toi;
+                best_normal = normal;
             }
         });
 
@@ -932,10 +928,10 @@ fn resolve_camera_collision(origin: Vec3, desired: Vec3, grid: &WorldCollisionGr
         let expanded_half = collider.half_extents + Vec3::splat(camera_radius);
         let box_min = collider.center - expanded_half;
         let box_max = collider.center + expanded_half;
-        if let Some(t) = segment_aabb_toi(origin, desired, box_min, box_max) {
-            if t < hit_t {
-                hit_t = t;
-            }
+        if let Some(t) = segment_aabb_toi(origin, desired, box_min, box_max)
+            && t < hit_t
+        {
+            hit_t = t;
         }
     });
 

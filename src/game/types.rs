@@ -58,19 +58,10 @@ impl Default for CliOptions {
     }
 }
 
-#[derive(Resource, Debug)]
+#[derive(Resource, Debug, Default)]
 pub(super) struct GameFlowState {
     pub(super) in_game: bool,
     pub(super) pending_scenario: Option<usize>,
-}
-
-impl Default for GameFlowState {
-    fn default() -> Self {
-        Self {
-            in_game: false,
-            pending_scenario: None,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -270,20 +261,10 @@ impl PersistedKeybinds {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub(super) struct PersistedConfig {
     pub(super) settings: GameSettings,
     pub(super) keybinds: PersistedKeybinds,
     pub(super) debug: DebugSettings,
-}
-
-impl Default for PersistedConfig {
-    fn default() -> Self {
-        Self {
-            settings: GameSettings::default(),
-            keybinds: PersistedKeybinds::default(),
-            debug: DebugSettings::default(),
-        }
-    }
 }

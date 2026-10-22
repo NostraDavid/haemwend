@@ -151,3 +151,23 @@ pub fn default_models_config() -> ModelsConfig {
         }],
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shipped_model_config_preserves_optional_parameter_metadata() {
+        let config = load_models_config().expect("checked-in model config should load");
+        let params = &config.models[0].params;
+        let width = params
+            .iter()
+            .find(|param| param.key == "top-width")
+            .unwrap();
+        assert_eq!(width.min, Some(0.6));
+        assert_eq!(width.help.as_deref(), Some("Overall tabletop width (X)."));
+        let bevel = params.iter().find(|param| param.key == "bevel").unwrap();
+        assert!(bevel.min.is_none());
+        assert!(bevel.help.is_some());
+    }
+}

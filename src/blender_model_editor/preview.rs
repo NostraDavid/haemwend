@@ -282,17 +282,17 @@ pub fn apply_live_preview(
 }
 
 pub fn frame_camera_target_distance(state: &EditorState) -> (Vec3, f32) {
-    if state.current_model().id == "table" {
-        if let Ok(params) = TablePreviewParams::from_state(state) {
-            let radius = params
-                .top_width
-                .max(params.top_depth)
-                .max(params.table_height)
-                * 0.95;
-            let target = Vec3::new(0.0, 0.0, params.table_height * 0.42);
-            let distance = (radius * 3.4).clamp(1.8, 25.0);
-            return (target, distance);
-        }
+    if state.current_model().id == "table"
+        && let Ok(params) = TablePreviewParams::from_state(state)
+    {
+        let radius = params
+            .top_width
+            .max(params.top_depth)
+            .max(params.table_height)
+            * 0.95;
+        let target = Vec3::new(0.0, 0.0, params.table_height * 0.42);
+        let distance = (radius * 3.4).clamp(1.8, 25.0);
+        return (target, distance);
     }
 
     (Vec3::new(0.0, 0.0, 0.5), 4.0)

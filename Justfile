@@ -3,20 +3,23 @@ set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 default:
   @just --list
 
+setup:
+  cargo fetch --locked
+
 run:
-  cargo run --bin haemwend
+  cargo run --locked --bin haemwend
 
 run-release:
-  cargo run --release --bin haemwend
+  cargo run --locked --release --bin haemwend
 
 run-hot:
   ./scripts/dev_game.sh
 
 blender-ui:
-  cargo run --bin blender_model_editor_ui
+  cargo run --locked --bin blender_model_editor_ui
 
 blender-ui-hot:
-  cargo watch -w src -w config -w Cargo.toml -w Cargo.lock -x "run --features bevy/file_watcher --bin blender_model_editor_ui"
+  cargo watch -w src -w config -w Cargo.toml -w Cargo.lock -x "run --locked --features bevy/file_watcher --bin blender_model_editor_ui"
 
 blender-table-validate:
   blender -b --factory-startup --python assets/blender_ai/table.py -- --validate
@@ -72,10 +75,10 @@ blender-tree-export out="" opts="":
   echo "glb: ${out_path}"
 
 check:
-  cargo check
+  cargo check --locked
 
 check-hot:
-  cargo check --features bevy/file_watcher
+  cargo check --locked --features bevy/file_watcher
 
 fmt:
   cargo fmt --all
@@ -84,16 +87,16 @@ fmt-check:
   cargo fmt --all -- --check
 
 clippy:
-  cargo clippy --all-targets --all-features -- -D warnings
+  cargo clippy --locked --all-targets --all-features -- -D warnings
 
 test:
-  cargo test
+  cargo test --locked
 
 ci:
-  cargo check
+  cargo check --locked
   cargo fmt --all -- --check
-  cargo clippy --all-targets --all-features -- -D warnings
-  cargo test
+  cargo clippy --locked --all-targets --all-features -- -D warnings
+  cargo test --locked
 
 # clean local git object/lfs cache to shrink .git size
 git-clean:
@@ -101,7 +104,7 @@ git-clean:
   git lfs prune
 
 perf output="perf_results.csv" repeats="3" warmup="1":
-  cargo run --release --bin perf_scenarios -- --scenario-file perf/scenarios.ron --output {{output}} --warmup {{warmup}} --repeats {{repeats}}
+  cargo run --locked --release --bin perf_scenarios -- --scenario-file perf/scenarios.ron --output {{output}} --warmup {{warmup}} --repeats {{repeats}}
 
 compare base head threshold="10":
   uv run scripts/compare_perf_results.py --base {{base}} --head {{head}} --max-regression-pct {{threshold}}
@@ -126,3 +129,7 @@ pngquant-optimize:
     fi; \
   done < <(find . -type f -iname '*.png' -not -path './.git/*' -print0); \
   exit $status
+
+update:
+  devenv update
+  cargo update

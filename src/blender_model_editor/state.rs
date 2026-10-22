@@ -241,13 +241,11 @@ pub fn load_initial_state() -> EditorState {
         };
     }
 
-    if loaded_from_legacy {
-        if let Err(err) = state.save_presets_to_disk() {
-            eprintln!(
-                "Failed to migrate presets to {}: {err}",
-                state.presets_path.display()
-            );
-        }
+    if loaded_from_legacy && let Err(err) = state.save_presets_to_disk() {
+        eprintln!(
+            "Failed to migrate presets to {}: {err}",
+            state.presets_path.display()
+        );
     }
 
     state

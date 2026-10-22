@@ -3,8 +3,6 @@
 # files
 !.gitignore
 !README.md
-!flake.nix
-!flake.lock
 !Cargo.toml
 !Cargo.lock
 !Justfile
@@ -22,3 +20,7 @@
 # reignore
 *.pyc
 __pycache__/
+!.envrc
+!devenv.nix
+!devenv.yaml
+!devenv.lock

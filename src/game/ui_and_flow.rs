@@ -1423,10 +1423,8 @@ pub(super) fn capture_keybind_filter_input(
 
     let mut changed = false;
 
-    if keys.just_pressed(KeyCode::Backspace) {
-        if menu.keybind_filter.pop().is_some() {
-            changed = true;
-        }
+    if keys.just_pressed(KeyCode::Backspace) && menu.keybind_filter.pop().is_some() {
+        changed = true;
     }
 
     for key in keys.get_just_pressed() {
@@ -2050,7 +2048,7 @@ pub(super) fn apply_fog_alpha_materials(
             let linear = material.base_color.to_linear();
             material.base_color =
                 Color::linear_rgba(linear.red, linear.green, linear.blue, state.base_alpha);
-            material.alpha_mode = state.original_alpha_mode.clone();
+            material.alpha_mode = state.original_alpha_mode;
             material.fog_enabled = state.original_fog_enabled;
             state.current_alpha_factor = 1.0;
             continue;
@@ -2064,7 +2062,7 @@ pub(super) fn apply_fog_alpha_materials(
             let state = FogAlphaMaterialState {
                 base_alpha: linear.alpha,
                 current_alpha_factor: 1.0,
-                original_alpha_mode: source_material.alpha_mode.clone(),
+                original_alpha_mode: source_material.alpha_mode,
                 original_fog_enabled: source_material.fog_enabled,
             };
             material_handle.0 = materials.add(source_material);
@@ -2097,5 +2095,59 @@ pub(super) fn apply_fog_alpha_materials(
             AlphaMode::Blend
         };
         material.fog_enabled = false;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn scenario_visuals_have_visibility_on_every_parent() {
+        let mut app = App::new();
+        app.add_plugins((
+            MinimalPlugins,
+            bevy::asset::AssetPlugin::default(),
+            bevy::camera::visibility::VisibilityPlugin,
+        ))
+        .init_resource::<Assets<Mesh>>()
+        .init_resource::<Assets<StandardMaterial>>()
+        .init_resource::<Assets<Image>>()
+        .add_systems(
+            Startup,
+            |mut commands: Commands,
+             asset_server: Res<AssetServer>,
+             mut meshes: ResMut<Assets<Mesh>>,
+             mut materials: ResMut<Assets<StandardMaterial>>,
+             mut images: ResMut<Assets<Image>>| {
+                let scenario = default_scenarios()
+                    .into_iter()
+                    .find(|scenario| scenario.id == "arena")
+                    .unwrap();
+                spawn_scenario_world(
+                    &mut commands,
+                    &asset_server,
+                    &mut meshes,
+                    &mut materials,
+                    &mut images,
+                    &scenario,
+                );
+            },
+        );
+        app.update();
+
+        let world = app.world_mut();
+        let mut children = world.query_filtered::<Entity, (With<Mesh3d>, With<ChildOf>)>();
+        assert!(children.iter(world).next().is_some());
+        for entity in children.iter(world) {
+            let mut child = entity;
+            while let Some(parent) = world.get::<ChildOf>(child) {
+                assert!(
+                    world.get::<InheritedVisibility>(parent.parent()).is_some(),
+                    "mesh {entity:?} has a parent without inherited visibility"
+                );
+                child = parent.parent();
+            }
+        }
     }
 }
